@@ -1,0 +1,64 @@
+// loaders.js
+import { redirect } from 'react-router-dom';
+import { authStore } from './authStore';
+import api from './api';
+
+// Вспомогательная функция для проверки авторизации
+async function requireAuth() {
+  // Если роль уже есть в сторе, используем её
+  if (authStore.role) {
+    return true;
+  }
+  
+  // Иначе пробуем проверить на сервере
+  try {
+    const response = await api.get('/auth/me');
+    authStore.setAuth(response.data);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Загрузчик для авторизованных пользователей (USER)
+export async function userLoader() {
+  const isAuth = await requireAuth();
+  
+  if (!isAuth) {
+    return redirect('/auth/login');
+  }
+  
+  // Проверяем, что роль - user (или хотя бы не админ/воркер)
+  // Можно пускать всех авторизованных, но показывать только свой функционал
+  return null;
+}
+
+// Загрузчик для работников (WORKER и ADMIN)
+export async function workerLoader() {
+  const isAuth = await requireAuth();
+  
+  if (!isAuth) {
+    return redirect('/auth/login');
+  }
+  
+  if (!authStore.hasRole(['worker', 'admin'])) {
+    return redirect('/unauthorized');
+  }
+  
+  return null;
+}
+
+// Загрузчик для админов (только ADMIN)
+export async function adminLoader() {
+  const isAuth = await requireAuth();
+  
+  if (!isAuth) {
+    return redirect('/auth/login');
+  }
+  
+  if (!authStore.hasRole('admin')) {
+    return redirect('/unauthorized');
+  }
+  
+  return null;
+}
