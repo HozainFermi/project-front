@@ -4,6 +4,7 @@ class AuthStore {
     this.role = null; // 'user', 'worker', 'admin'
     this.userData = null;
     this.listeners = [];
+    this.initFromStorage();
   }
 
   // Подписка на изменения

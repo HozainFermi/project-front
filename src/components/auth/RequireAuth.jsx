@@ -7,7 +7,7 @@ export function RequireAuth({ children, allowedRoles }) {
   const location = useLocation();
 
   useEffect(() => {
-    // Подписка на изменения в authStore
+
     const unsubscribe = authStore.subscribe(() => {
       if (!authStore.role) {
         navigate('/auth/login', { state: { from: location.pathname } });
@@ -16,7 +16,7 @@ export function RequireAuth({ children, allowedRoles }) {
       }
     });
 
-    // Проверка при монтировании
+    
     if (!authStore.role) {
       navigate('/auth/login', { state: { from: location.pathname } });
     } else if (allowedRoles && !authStore.hasRole(allowedRoles)) {

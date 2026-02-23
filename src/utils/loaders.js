@@ -1,7 +1,7 @@
 // loaders.js
 import { redirect } from 'react-router-dom';
-import { authStore } from './authStore';
-import api from './api';
+import { authStore } from '../api/authStore';
+import api from '../api/instance';
 
 // Вспомогательная функция для проверки авторизации
 async function requireAuth() {

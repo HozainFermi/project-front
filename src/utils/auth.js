@@ -1,6 +1,6 @@
 // auth.js
-import api from './api';
-import { authStore } from './authStore';
+import api from '../api/instance';
+import { authStore } from '../api/authStore';
 
 // Вход/отправка кода
 export async function sendCode(phoneNumber) {
