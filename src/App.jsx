@@ -1,11 +1,13 @@
-import { 
-  createBrowserRouter, 
+// App.jsx
+import {
+  createBrowserRouter,
   RouterProvider,
-  Navigate 
+  Navigate,
+  redirect,
 } from 'react-router-dom';
-import { useEffect } from 'react';
-import { checkAuth } from './api/auth';
-import { authStore } from './stores/authStore';
+import { useEffect, useState } from 'react';
+import { checkAuth } from './utils/auth';
+import { authStore } from './api/authStore';
 
 // Лейауты
 import AuthLayout from './layouts/AuthLayout';
@@ -42,7 +44,7 @@ import AdminWorkers from './pages/admin/Workers';
 import AdminStats from './pages/admin/Stats';
 
 // Загрузчики
-import { userLoader, workerLoader, adminLoader } from './api/loaders';
+import { userLoader, workerLoader, adminLoader } from './utils/loaders';
 
 // Компонент для проверки авторизации при загрузке
 function AppInitializer({ children }) {
@@ -69,6 +71,7 @@ const router = createBrowserRouter([
       { 
         path: "login", 
         element: <Login />,
+        // Если уже авторизован - редирект на главную по роли
         loader: async () => {
           if (authStore.role) {
             return redirect(authStore.role === 'user' ? '/' : '/worker/dashboard');
@@ -128,17 +131,6 @@ const router = createBrowserRouter([
       { path: "workers", element: <AdminWorkers /> },
       { path: "stats", element: <AdminStats /> },
     ]
-  },
-  
-  // Редирект с корня
-  {
-    path: "/",
-    loader: async () => {
-      if (authStore.role === 'admin') return redirect('/admin');
-      if (authStore.role === 'worker') return redirect('/worker');
-      if (authStore.role === 'user') return redirect('/');
-      return redirect('/auth/login');
-    }
   }
 ]);
 
