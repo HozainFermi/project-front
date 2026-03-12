@@ -46,6 +46,7 @@ import { Spinner, Text } from "@chakra-ui/react";
 
 // Загрузчики
 import { userLoader, workerLoader, adminLoader } from './utils/loaders';
+import { Toaster } from "./components/ui/toaster";
 
 // Компонент для проверки авторизации при загрузке
 function AppInitializer({ children }) {
@@ -142,6 +143,7 @@ function App() {
   return (
     <AppInitializer>
       <RouterProvider router={router} />
+      <Toaster />
     </AppInitializer>
   );
 }
