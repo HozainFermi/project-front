@@ -31,7 +31,8 @@ export default function WorkerRequests() {
             </Table.Cell>
             <Table.Cell textAlign="end">
               <Button 
-                size="sm" 
+                size="sm"
+                color="black" 
                 onClick={() => navigate('/worker/requests/1')}
               >
                 Открыть
