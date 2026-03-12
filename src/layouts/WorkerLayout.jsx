@@ -15,7 +15,7 @@ export default function WorkerLayout() {
         <Heading size="md" mb={4}>
           Панель сотрудника
         </Heading>
-        <Stack spacing={2}>
+        <Stack spacing={3}>
           <Link as={NavLink} to="/worker/dashboard">
             Дашборд
           </Link>

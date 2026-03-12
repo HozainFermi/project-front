@@ -25,7 +25,7 @@ export async function userLoader() {
   const isAuth = await requireAuth();
   
   if (!isAuth) {
-    return redirect('/auth/login');
+    //!!!return redirect('/auth/login');
   }
   
   // Проверяем, что роль - user (или хотя бы не админ/воркер)
@@ -38,11 +38,11 @@ export async function workerLoader() {
   const isAuth = await requireAuth();
   
   if (!isAuth) {
-    return redirect('/auth/login');
+    //!!!return redirect('/auth/login');
   }
   
   if (!authStore.hasRole(['worker', 'admin'])) {
-    return redirect('/unauthorized');
+    //!!!return redirect('/unauthorized');
   }
   
   return null;
@@ -53,11 +53,11 @@ export async function adminLoader() {
   const isAuth = await requireAuth();
   
   if (!isAuth) {
-    return redirect('/auth/login');
+    //!!!return redirect('/auth/login');
   }
   
   if (!authStore.hasRole('admin')) {
-    return redirect('/unauthorized');
+    //!!!return redirect('/unauthorized');
   }
   
   return null;

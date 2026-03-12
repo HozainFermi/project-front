@@ -1,4 +1,3 @@
-// App.jsx
 import {
   createBrowserRouter,
   RouterProvider,
@@ -42,6 +41,8 @@ import AdminDashboard from './pages/admin/Dashboard';
 import CompanyProfile from './pages/admin/CompanyProfile';
 import AdminWorkers from './pages/admin/Workers';
 import AdminStats from './pages/admin/Stats';
+import { HStack, Stack, VStack } from "@chakra-ui/react";
+import { Spinner, Text } from "@chakra-ui/react";
 
 // Загрузчики
 import { userLoader, workerLoader, adminLoader } from './utils/loaders';
@@ -55,7 +56,10 @@ function AppInitializer({ children }) {
   }, []);
 
   if (isLoading) {
-    return <div>Загрузка...</div>; // Или красивый лоадер
+    return <VStack colorPalette="teal" h="100vh" w="100vw" alignItems="center" justifyContent="center" >
+            <Spinner color="colorPalette.600" />
+            <Text color="colorPalette.600">Loading...</Text>
+            </VStack>
   }
 
   return children;
