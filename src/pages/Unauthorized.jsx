@@ -1,6 +1,6 @@
-import { Box, Button, Heading, Text } from '@chakra-ui/react';
+import { Box, Heading, Text } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-
+import { PurpleButton } from '../components/ui/buttons'
 export default function Unauthorized() {
   const navigate = useNavigate();
 
@@ -14,9 +14,9 @@ export default function Unauthorized() {
           У вас нет прав для просмотра этой страницы. Если вы считаете, что это ошибка —
           обратитесь к администратору или в управляющую компанию.
         </Text>
-        <Button colorScheme="teal" onClick={() => navigate(-1)}>
+        <PurpleButton colorScheme="teal" onClick={() => navigate(-1)}>
           Вернуться назад
-        </Button>
+        </PurpleButton>
       </Box>
     </Box>
   );

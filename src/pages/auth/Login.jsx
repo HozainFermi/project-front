@@ -4,7 +4,7 @@ export default function Login() {
   return (
     <Fieldset.Root>
       <Stack spacing={6}>
-        <Fieldset.Legend>Авторизация</Fieldset.Legend>        
+        <Fieldset.Legend color="white">Авторизация</Fieldset.Legend>        
         <Fieldset.HelperText fontSize="sm" color="gray.300">
           Здесь можно сделать вход по телефону/коду или по логину/паролю
         </Fieldset.HelperText>

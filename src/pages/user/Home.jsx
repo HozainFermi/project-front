@@ -2,6 +2,8 @@ import { Box, Heading, SimpleGrid, Stat, Button, HStack, VStack, Text } from '@c
 import { Link as RouterLink } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../../api/instance';
+import * as Buttons from "../../components/ui/buttons";
+
 
 export default function Home() {
   const [dashboardData, setDashboardData] = useState({
@@ -56,7 +58,7 @@ export default function Home() {
               ? 'счётчики переданы' 
               : 'срочно передайте показания'}
           </Stat.HelpText>
-          <Button 
+          <Buttons.DangerButton 
             as={RouterLink} 
             to="/meters" 
             size="sm" 
@@ -69,7 +71,7 @@ export default function Home() {
             }}
           >
             {dashboardData.lastMeterReading ? 'Передать снова' : 'Передать показания'}
-          </Button>
+          </Buttons.DangerButton>
         </Stat.Root>
         
         <Stat.Root bg="white" p={4} rounded="lg" shadow="sm">
