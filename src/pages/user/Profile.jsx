@@ -295,8 +295,12 @@ export default function UserProfile() {
             <Card.Footer>
               <HStack spacing={3} justify="flex-end" width="full">
                 <Button
+                colorPalette="teal"
+                 color="#646cff"
+                  variant="outline"
+                  isLoading={isLoading}
+                  loadingText="Сохранение"
                   leftIcon={<FaTimes />}
-                  variant="ghost"
                   onClick={handleCancel}
                   isDisabled={isLoading}
                 >

@@ -22,7 +22,7 @@ export default function UserDetails() {
         <Text>
           <strong>Статус:</strong> Активен
         </Text>
-        <Button alignSelf="flex-start" variant="outline" colorScheme="teal">
+        <Button alignSelf="flex-start" colorPalette="teal" variant="outline">
           История заявок
         </Button>
       </Stack>
