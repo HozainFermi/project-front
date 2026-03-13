@@ -27,9 +27,10 @@ export default function CompanyUsers() {
             <Table.Cell>+7 (999) 000-00-00</Table.Cell>
             <Table.Cell textAlign="end">
               <Button 
-                size="sm"
-                color="black" 
-                onClick={() => navigate('/worker/users/1')}
+                 size="sm"
+                 colorPalette="teal"
+                 color="black"
+                 onClick={() => navigate('/worker/users/1')}
               >
                 Открыть
               </Button>

@@ -71,7 +71,9 @@ export default function WorkerDashboard() {
             as={RouterLink} 
             to="/worker/meter-readings" 
             size="sm" 
-            colorPalette="teal" 
+            colorPalette="teal"
+            color="#646cff"
+            variant="outline"
             mt={4}
             w="full"
           >
@@ -83,7 +85,7 @@ export default function WorkerDashboard() {
           <Stat.Label fontSize="sm" color="gray.600">Непрочитанные сообщения</Stat.Label>
           <Stat.ValueText fontSize="3xl" fontWeight="bold">{stats.unreadMessages}</Stat.ValueText>
           <Stat.HelpText fontSize="sm">от жильцов</Stat.HelpText>
-          <Button as={RouterLink} to="/worker/messages" size="sm" variant="outline" mt={4} w="full">
+          <Button as={RouterLink} to="/worker/messages" size="sm"  colorPalette="teal" color="#646cff"variant="outline" mt={4} w="full">
             Прочитать
           </Button>
         </Stat.Root>
@@ -147,7 +149,9 @@ export default function WorkerDashboard() {
               to="/worker/requests" 
               h="60px" 
               colorPalette="teal"
-              variant="solid"
+              color="#646cff"
+              variant="outline"
+
             >
               Все заявки
             </Button>
@@ -156,7 +160,8 @@ export default function WorkerDashboard() {
               to="/worker/meter-readings" 
               h="60px" 
               colorPalette="teal"
-              variant="solid"
+              color="#646cff"
+              variant="outline"
             >
               Показания
             </Button>
@@ -164,6 +169,8 @@ export default function WorkerDashboard() {
               as={RouterLink} 
               to="/worker/users" 
               h="60px" 
+              colorPalette="teal"
+              color="#646cff"
               variant="outline"
             >
               Жильцы
@@ -172,6 +179,8 @@ export default function WorkerDashboard() {
               as={RouterLink} 
               to="/worker/reports" 
               h="60px" 
+              colorPalette="teal"
+              color="#646cff"
               variant="outline"
             >
               Отчёты
@@ -180,6 +189,8 @@ export default function WorkerDashboard() {
               as={RouterLink} 
               to="/worker/schedule" 
               h="60px" 
+              colorPalette="teal"
+              color="#646cff"
               variant="outline"
             >
               График работ
@@ -188,6 +199,8 @@ export default function WorkerDashboard() {
               as={RouterLink} 
               to="/worker/messages" 
               h="60px" 
+              colorPalette="teal"
+              color="#646cff"
               variant="outline"
             >
               Сообщения

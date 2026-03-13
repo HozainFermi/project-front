@@ -22,7 +22,7 @@ export default function RequestDetails() {
         <Text>
           <strong>Описание:</strong> Протечка в подвале, запах сырости.
         </Text>
-        <Button alignSelf="flex-start" colorScheme="teal" color="black">
+        <Button alignSelf="flex-start" colorPalette="teal" color="black">
           Закрыть заявку
         </Button>
       </Stack>
