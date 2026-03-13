@@ -37,6 +37,7 @@ export default function UserProfile() {
     patronymic: 'Иванович',
     phone: '+7 (999) 000-00-00',
     email: 'ivanov@example.com',
+    accountNumber:'1234567890',
     address: 'г. Город, ул. Примерная, д. 1, кв. 1',
     flatNumber: '1',
     buildingNumber: '1',
@@ -93,9 +94,17 @@ export default function UserProfile() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Неверный формат email';
     }
+    if (!formData.accountNumber.trim()) {
+      newErrors.accountNumber = 'Номер лицевого счёта обязателен';
+    } else if (!/^\d+$/.test(formData.accountNumber)) {
+      newErrors.accountNumber = 'Только цифры';
+    }  else if (!/^\d{10,12}$/.test(formData.accountNumber)) {
+  newErrors.accountNumber = 'Номер должен содержать 10-12 цифр';
+}
     if (!formData.address.trim()) {
       newErrors.address = 'Адрес обязателен';
     }
+  
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -135,12 +144,12 @@ export default function UserProfile() {
   return (
     <Box>
       <HStack justify="space-between" mb={4}>
-        <Heading size="lg">Профиль жильца</Heading>
+        <Heading size="lg"color="black">Профиль жильца</Heading>
         {!isEditing ? (
-          <Button
-            leftIcon={<FaPencilAlt />}
-            colorScheme="teal"
-            color="black"
+          <Button 
+            colorPalette="teal"
+            color="#646cff"
+            variant="outline"
             onClick={handleEdit}
           >
             Редактировать
@@ -278,6 +287,32 @@ export default function UserProfile() {
                   )}
                   <Field.ErrorText>{errors.email}</Field.ErrorText>
                 </Field.Root>
+                
+  {/* После email или перед адресом */}
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                <Field.Root invalid={errors.accountNumber}>
+                  <Field.Label>
+                    <HStack spacing={1}>
+                    <Text>№ лицевого счёта</Text>
+                  </HStack>
+               </Field.Label>
+    {isEditing ? (
+      <Input
+        name="accountNumber"
+        value={formData.accountNumber}
+        onChange={handleInputChange}
+        placeholder="10-12 цифр"
+        maxLength={12}
+      />
+    ) : (
+      <Text p={2} bg="gray.50" borderRadius="md">
+        {formData.accountNumber || '—'}
+      </Text>
+    )}
+    <Field.ErrorText>{errors.accountNumber}</Field.ErrorText>
+  </Field.Root>
+</SimpleGrid>
+                
               </SimpleGrid>
 
               <Box borderBottom="1px solid" borderColor="gray.200" my={2} />
@@ -295,8 +330,12 @@ export default function UserProfile() {
             <Card.Footer>
               <HStack spacing={3} justify="flex-end" width="full">
                 <Button
+                colorPalette="teal"
+                 color="#646cff"
+                  variant="outline"
+                  isLoading={isLoading}
+                  loadingText="Сохранение"
                   leftIcon={<FaTimes />}
-                  variant="ghost"
                   onClick={handleCancel}
                   isDisabled={isLoading}
                 >
@@ -304,11 +343,13 @@ export default function UserProfile() {
                 </Button>
                 <Button
                   leftIcon={<FaCheck />}
-                  colorScheme="teal"
-                  color="black"
-                  onClick={handleSave}
-                  isLoading={isLoading}
-                  loadingText="Сохранение"
+
+            colorPalette="teal"
+            color="#646cff"
+            variant="outline"
+            onClick={handleSave}
+            isLoading={isLoading}
+            loadingText="Сохранение"
                 >
                   Сохранить изменения
                 </Button>
