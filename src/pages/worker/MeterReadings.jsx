@@ -26,10 +26,10 @@ export default function WorkerMeterReadings() {
             <Table.Cell>01.02.2026</Table.Cell>
             <Table.Cell textAlign="end">
               <HStack gap={2} justifyContent="flex-end">
-                <Button size="sm" colorPalette="teal">
+                <Button size="sm" colorPalette="teal" color="black">
                   Принять
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" color="black">
                   Отклонить
                 </Button>
               </HStack>

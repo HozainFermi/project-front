@@ -27,7 +27,7 @@ export default function UserRequests() {
             </Table.Cell>
             <Table.Cell>15.01.2026</Table.Cell>
             <Table.Cell textAlign="end">
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" color="black" >
                 Открыть
               </Button>
             </Table.Cell>

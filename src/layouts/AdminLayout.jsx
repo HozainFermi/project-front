@@ -3,7 +3,7 @@ import { Box, Flex, Heading, Stack, Link } from '@chakra-ui/react';
 
 export default function AdminLayout() {
   return (
-    <Flex minH="100vh" bg="gray.50">
+    <Flex minH="100vh" minW="100vw" bg="gray.50">
       <Box
         as="aside"
         w={{ base: '0', md: '260px' }}

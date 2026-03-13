@@ -1,4 +1,4 @@
-// authStore.js - простое глобальное состояние
+//простое глобальное состояние
 class AuthStore {
   constructor() {
     this.role = null; // 'user', 'worker', 'admin'
