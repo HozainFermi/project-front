@@ -60,6 +60,7 @@ export default function Home() {
             as={RouterLink} 
             to="/meters" 
             size="sm" 
+            color="white"
             colorPalette={dashboardData.lastMeterReading ? 'teal' : 'red'} 
             mt={2}
           >
