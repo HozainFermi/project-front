@@ -135,12 +135,12 @@ export default function UserProfile() {
   return (
     <Box>
       <HStack justify="space-between" mb={4}>
-        <Heading size="lg">Профиль жильца</Heading>
+        <Heading size="lg"color="black">Профиль жильца</Heading>
         {!isEditing ? (
-          <Button
-            leftIcon={<FaPencilAlt />}
-            colorScheme="teal"
-            color="black"
+          <Button 
+            colorPalette="teal"
+            color="#646cff"
+            variant="outline"
             onClick={handleEdit}
           >
             Редактировать
@@ -304,11 +304,13 @@ export default function UserProfile() {
                 </Button>
                 <Button
                   leftIcon={<FaCheck />}
-                  colorScheme="teal"
-                  color="black"
-                  onClick={handleSave}
-                  isLoading={isLoading}
-                  loadingText="Сохранение"
+
+            colorPalette="teal"
+            color="#646cff"
+            variant="outline"
+            onClick={handleSave}
+            isLoading={isLoading}
+            loadingText="Сохранение"
                 >
                   Сохранить изменения
                 </Button>
