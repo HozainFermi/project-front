@@ -13,6 +13,7 @@ import {
   SimpleGrid,
   Badge
 } from '@chakra-ui/react';
+import * as Buttons from "../../components/ui/buttons";
 import { toaster } from "../../components/ui/toaster";
 import { 
   FaUser,
@@ -76,39 +77,64 @@ export default function UserProfile() {
   };
 
   const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Фамилия обязательна';
-    }
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'Имя обязательно';
-    }
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Телефон обязателен';
-    } else if (!/^[\d\s\+\-\(\)]+$/.test(formData.phone)) {
-      newErrors.phone = 'Неверный формат телефона';
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email обязателен';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Неверный формат email';
-    }
-    if (!formData.accountNumber.trim()) {
-      newErrors.accountNumber = 'Номер лицевого счёта обязателен';
-    } else if (!/^\d+$/.test(formData.accountNumber)) {
-      newErrors.accountNumber = 'Только цифры';
-    }  else if (!/^\d{10,12}$/.test(formData.accountNumber)) {
-  newErrors.accountNumber = 'Номер должен содержать 10-12 цифр';
-}
-    if (!formData.address.trim()) {
-      newErrors.address = 'Адрес обязателен';
-    }
+  const newErrors = {};
   
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  if (!formData.lastName.trim()) {
+    newErrors.lastName = 'Фамилия обязательна';
+  } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.lastName)) {
+    newErrors.lastName = 'Только буквы и дефис';
+  } else if (formData.lastName.length > 64) {
+    newErrors.lastName = 'Не более 64 символов';
+  }
+  
+
+  if (!formData.firstName.trim()) {
+    newErrors.firstName = 'Имя обязательно';
+  } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.firstName)) {
+    newErrors.firstName = 'Только буквы и дефис';
+  } else if (formData.firstName.length > 64) {
+    newErrors.firstName = 'Не более 64 символов';
+  }
+  
+ 
+  if (formData.patronymic.trim() && !/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.patronymic)) {
+    newErrors.patronymic = 'Только буквы и дефис';
+  } else if (formData.patronymic.length > 64) {
+    newErrors.patronymic = 'Не более 64 символов';
+  }
+  
+
+  if (!formData.phone.trim()) {
+    newErrors.phone = 'Телефон обязателен';
+  } else if (!/^[\d\s\+\-\(\)]+$/.test(formData.phone)) {
+    newErrors.phone = 'Неверный формат телефона';
+  }
+  
+
+  if (!formData.email.trim()) {
+    newErrors.email = 'Email обязателен';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    newErrors.email = 'Неверный формат email';
+  }
+  
+
+  if (!formData.accountNumber.trim()) {
+    newErrors.accountNumber = 'Номер лицевого счёта обязателен';
+  } else if (!/^\d+$/.test(formData.accountNumber)) {
+    newErrors.accountNumber = 'Только цифры';
+  } else if (!/^\d{10,12}$/.test(formData.accountNumber)) {
+    newErrors.accountNumber = 'Номер должен содержать 10-12 цифр';
+  }
+  
+
+  if (!formData.address.trim()) {
+    newErrors.address = 'Адрес обязателен';
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
   const handleSave = async () => {
     if (!validateForm()) {

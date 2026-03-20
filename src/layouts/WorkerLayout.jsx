@@ -62,11 +62,11 @@ export default function WorkerLayout() {
         <Box p={4} borderBottomWidth="1px" borderColor="gray.100">
           <HStack gap={3}>
             <Avatar.Root size="sm">
-              <Avatar.Fallback name="Иван Петров" />
+              <Avatar.Fallback name="Кабан Кабаныч" />
               <Avatar.Image src="https://bit.ly/dan-abramov" />
             </Avatar.Root>
             <VStack align="start" gap={0}>
-              <Text fontSize="sm" fontWeight="medium">Иван Петров</Text>
+              <Text fontSize="sm" fontWeight="medium">Кабан Кабаныч</Text>
               <Text fontSize="xs" color="gray.500">Мастер участка</Text>
             </VStack>
           </HStack>
