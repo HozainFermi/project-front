@@ -27,6 +27,7 @@ import UserProfile from './pages/user/Profile';
 import UserMeters from './pages/user/Meters';
 import UserRequests from './pages/user/Requests';
 import UserNews from './pages/user/News';
+import UserPayments from './pages/user/Payments';
 
 // Страницы работников/админов
 import WorkerDashboard from './pages/worker/Dashboard';
@@ -35,6 +36,7 @@ import RequestDetails from './pages/worker/RequestDetails';
 import WorkerMeterReadings from './pages/worker/MeterReadings';
 import CompanyUsers from './pages/worker/Users';
 import UserDetails from './pages/worker/UserDetails';
+import WorkerMessages from './pages/worker/Messages';
 
 // Страницы только для админов
 import AdminDashboard from './pages/admin/Dashboard';
@@ -105,6 +107,7 @@ const router = createBrowserRouter([
       { path: "meters", element: <UserMeters /> },
       { path: "requests", element: <UserRequests /> },
       { path: "news", element: <UserNews /> },
+      {path: "payments",element: <UserPayments/>} ,
     ]
   },
 
@@ -121,6 +124,7 @@ const router = createBrowserRouter([
       { path: "meter-readings", element: <WorkerMeterReadings /> },
       { path: "users", element: <CompanyUsers /> },
       { path: "users/:id", element: <UserDetails /> },
+      { path: "messages", element:<WorkerMessages/>}
     ]
   },
 

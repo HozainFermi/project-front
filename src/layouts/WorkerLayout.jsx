@@ -11,16 +11,24 @@ import {
   LuMessageSquare
 } from 'react-icons/lu';
 import { 
-  FaHome  
+  FaHome
 } from 'react-icons/fa';
 
 export default function WorkerLayout() {
+  // Временная заглушка для непрочитанных
+  const unreadCount = 3;
+
   const menuItems = [
     { path: '/worker/dashboard', label: 'Дашборд', icon: LuLayoutDashboard },
     { path: '/worker/requests', label: 'Заявки', icon: LuClipboardList },
     { path: '/worker/meter-readings', label: 'Показания счётчиков', icon: LuGauge },
     { path: '/worker/users', label: 'Жильцы', icon: LuUsers },
-    { path: '/worker/messages', label: 'Сообщения', icon: LuMessageSquare, badge: 3 },
+    { 
+      path: '/worker/messages', 
+      label: 'Сообщения', 
+      icon: LuMessageSquare, 
+      badge: unreadCount  // ← добавляем бейдж с количеством
+    },
   ];
 
   return (
@@ -104,9 +112,9 @@ export default function WorkerLayout() {
                     <Box as={item.icon} size={18} />
                     <Text fontSize="sm">{item.label}</Text>
                   </HStack>
-                  {item.badge && (
+                  {item.badge > 0 && (
                     <Badge
-                      bg="teal.500"
+                      bg="red.500"
                       color="white"
                       borderRadius="full"
                       px={1.5}
@@ -121,9 +129,7 @@ export default function WorkerLayout() {
             </NavLink>
           ))}
 
-          {/* <Divider my={3} borderColor="gray.200" /> */}
-
-          {/* Дополнительный пункт */}
+          {/* Настройки */}
           <NavLink 
             to="/worker/settings"
             style={{ textDecoration: 'none', width: '100%' }}
