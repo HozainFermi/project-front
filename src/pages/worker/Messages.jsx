@@ -31,7 +31,7 @@ export default function WorkerMessages() {
         },
         {
           id: 2,
-          resident: 'Петров П.П.',
+          resident: 'Загиров П.П.',
           apartment: '15',
           amount: 1850.00,
           date: '2026-03-19T14:20:00Z',
