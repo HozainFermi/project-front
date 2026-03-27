@@ -1,5 +1,6 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';  // ← добавил useNavigate
 import { Box, Flex, Heading, HStack, IconButton, VStack, Text, Avatar, Badge } from '@chakra-ui/react';
+import { useState, useEffect } from 'react';
 import { 
   LuUser,
   LuGauge,
@@ -13,8 +14,32 @@ import {
 import { 
   FaHome  
 } from 'react-icons/fa';
+import api from '../api/instance';
 
 export default function MainLayout() {
+  const navigate = useNavigate();  // ← добавил
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.get('/users/profile');
+      setUser(response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки профиля:', error);
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        setUser(JSON.parse(userStr));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const menuItems = [
     { path: '/', label: 'Главная', icon: FaHome },
     { path: '/profile', label: 'Профиль', icon: LuUser },
@@ -22,11 +47,43 @@ export default function MainLayout() {
     { path: '/requests', label: 'Заявки', icon: LuClipboardList },
     { path: '/news', label: 'Новости', icon: LuBuilding, badge: 2 },
     { path: '/payments', label: 'Платежи', icon: LuCalendar },
+    { path: '/settings', label: 'Настройки', icon: LuSettings },
   ];
+
+  const getFullName = () => {
+    if (!user) return 'Жилец';
+    const lastName = user.lastName || '';
+    const firstName = user.firstName || '';
+    const fullName = `${lastName} ${firstName}`.trim();
+    return fullName || 'Жилец';
+  };
+
+  const getInitials = () => {
+    if (!user) return 'Ж';
+    const lastName = user.lastName || '';
+    const firstName = user.firstName || '';
+    const initials = `${lastName.charAt(0)}${firstName.charAt(0)}`.toUpperCase();
+    return initials || 'Ж';
+  };
+
+  const getApartment = () => {
+    if (user?.address?.flat) {
+      return `кв. ${user.address.flat}`;
+    }
+    return '';
+  };
+
+  if (loading) {
+    return (
+      <Flex minH="100vh" bg="gray.50" align="center" justify="center">
+        <Text>Загрузка...</Text>
+      </Flex>
+    );
+  }
 
   return (
     <Flex minH="100vh" minW="100vw" bg="gray.50">
-      {/* Левая панель - как в WorkerLayout */}
+      {/* Левая панель */}
       <Box
         w="260px"
         bg="white"
@@ -63,12 +120,13 @@ export default function MainLayout() {
         <Box p={4} borderBottomWidth="1px" borderColor="gray.100">
           <HStack gap={3}>
             <Avatar.Root size="sm">
-              <Avatar.Fallback name="Иван Иванов" />
-              <Avatar.Image src="https://bit.ly/sage-adebayo" />
+              <Avatar.Fallback name={getFullName()}>
+                {getInitials()}
+              </Avatar.Fallback>
             </Avatar.Root>
             <VStack align="start" gap={0}>
-              <Text fontSize="sm" fontWeight="medium">Иван Иванов</Text>
-              <Text fontSize="xs" color="gray.500">кв. 42</Text>
+              <Text fontSize="sm" fontWeight="medium">{getFullName()}</Text>
+              <Text fontSize="xs" color="gray.500">{getApartment() || 'Жилец'}</Text>
             </VStack>
           </HStack>
         </Box>
@@ -121,31 +179,6 @@ export default function MainLayout() {
               )}
             </NavLink>
           ))}
-
-          {/* <Divider my={3} borderColor="gray.200" /> */}
-
-          {/* Настройки */}
-          <NavLink 
-            to="/settings"
-            style={{ textDecoration: 'none', width: '100%' }}
-          >
-            {({ isActive }) => (
-              <Flex
-                align="center"
-                px={3}
-                py={2.5}
-                borderRadius="md"
-                bg={isActive ? 'teal.50' : 'transparent'}
-                color={isActive ? 'teal.700' : 'gray.700'}
-                _hover={{ bg: isActive ? 'teal.50' : 'gray.100' }}
-              >
-                <HStack gap={3}>
-                  <LuSettings size={18} />
-                  <Text fontSize="sm">Настройки</Text>
-                </HStack>
-              </Flex>
-            )}
-          </NavLink>
         </VStack>
 
         {/* Кнопка выхода */}
@@ -167,7 +200,7 @@ export default function MainLayout() {
         </Box>
       </Box>
 
-      {/* Основной контент - с отступом под левую панель */}
+      {/* Основной контент */}
       <Box
         flex="1"
         ml={{ base: 0, md: '260px' }}
@@ -200,6 +233,7 @@ export default function MainLayout() {
                   fontSize="18px"
                   color="gray.600"
                   _hover={{ bg: 'gray.100' }}
+                  onClick={() => navigate('/news')}  // ← добавил onClick
                 >
                   <LuBellRing />
                 </IconButton>
@@ -220,8 +254,9 @@ export default function MainLayout() {
               </Box>
 
               <Avatar.Root size="sm">
-                <Avatar.Fallback name="Иван Иванов" />
-                <Avatar.Image src="https://bit.ly/sage-adebayo" />
+                <Avatar.Fallback name={getFullName()}>
+                  {getInitials()}
+                </Avatar.Fallback>
               </Avatar.Root>
             </HStack>
           </Flex>

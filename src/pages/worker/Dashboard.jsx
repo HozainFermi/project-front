@@ -5,99 +5,209 @@ import api from '../../api/instance';
 
 export default function WorkerDashboard() {
   const [stats, setStats] = useState({
+    totalRequests: 0,
     openRequests: 0,
-    pendingReadings: 0,
-    unreadMessages: 0,
-    todayTasks: 0,
-    requestsByStatus: {
-      new: 0,
-      in_progress: 0,
-      completed: 0
-    },
+    inProgressRequests: 0,
+    completedRequests: 0,
+    rejectedRequests: 0,
     recentRequests: []
   });
   const [loading, setLoading] = useState(true);
+  const [companyName, setCompanyName] = useState('');
 
   useEffect(() => {
-    fetchStats();
+    fetchDashboardData();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/worker/dashboard');
-      setStats(response.data);
+      
+      // Получаем профиль пользователя (оттуда возьмём companyId)
+      let companyId = 1;
+      try {
+        const userRes = await api.get('/users/profile');
+        companyId = userRes.data.companyId || 1;
+      } catch (error) {
+        console.error('Ошибка загрузки профиля:', error);
+      }
+      
+      // Получаем информацию о компании
+      try {
+        const companyResponse = await api.get(`/service/company_profile/${companyId}`);
+        setCompanyName(companyResponse.data.companyName);
+      } catch (error) {
+        console.error('Ошибка загрузки компании:', error);
+      }
+      
+      // Получаем все заявки компании
+      const requestsResponse = await api.get('/service/requests');
+      const allRequests = requestsResponse.data || [];
+      
+      // Считаем статистику
+      const total = allRequests.length;
+      const open = allRequests.filter(r => r.status === 'Created' || r.status === 'Accepted').length;
+      const inProgress = allRequests.filter(r => r.status === 'InProgress').length;
+      const completed = allRequests.filter(r => r.status === 'Completed').length;
+      const rejected = allRequests.filter(r => r.status === 'Rejected').length;
+      
+      // Последние 5 заявок
+      const recent = [...allRequests]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5);
+      
+      setStats({
+        totalRequests: total,
+        openRequests: open,
+        inProgressRequests: inProgress,
+        completedRequests: completed,
+        rejectedRequests: rejected,
+        recentRequests: recent
+      });
+      
     } catch (error) {
-      console.error('Ошибка загрузки статистики', error);
+      console.error('Ошибка загрузки дашборда:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'Completed': return 'green';
+      case 'Rejected': return 'red';
+      case 'InProgress': return 'yellow';
+      case 'Accepted': return 'blue';
+      default: return 'gray';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch(status) {
+      case 'Completed': return 'Выполнена';
+      case 'Rejected': return 'Отклонена';
+      case 'InProgress': return 'В работе';
+      case 'Accepted': return 'Принята';
+      default: return 'Создана';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+  };
+
   if (loading) {
     return (
       <Box textAlign="center" py={10}>
-        <Text>Загрузка...</Text>
+        <Text>Загрузка данных...</Text>
       </Box>
     );
   }
 
   return (
     <Box>
-      <Heading size="lg" mb={6}>
+      <Heading size="lg" mb={2}>
         Рабочая панель
       </Heading>
+      {companyName && (
+        <Text color="gray.500" mb={6}>
+          {companyName}
+        </Text>
+      )}
       
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={6} mb={8}>
+        {/* Всего заявок */}
+        <Stat.Root bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
+          <Stat.Label fontSize="sm" color="gray.600">Всего заявок</Stat.Label>
+          <Stat.ValueText fontSize="3xl" fontWeight="bold">
+            {stats.totalRequests}
+          </Stat.ValueText>
+          <Stat.HelpText fontSize="sm">за всё время</Stat.HelpText>
+        </Stat.Root>
+        
+        {/* Открытые заявки */}
         <Stat.Root bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
           <Stat.Label fontSize="sm" color="gray.600">Открытые заявки</Stat.Label>
-          <Stat.ValueText fontSize="3xl" fontWeight="bold">{stats.openRequests}</Stat.ValueText>
+          <Stat.ValueText fontSize="3xl" fontWeight="bold">
+            {stats.openRequests}
+          </Stat.ValueText>
           <Stat.HelpText fontSize="sm">требуют внимания</Stat.HelpText>
-          <Progress.Root value={(stats.requestsByStatus.in_progress / stats.openRequests) * 100 || 0} mt={4}>
-            <Progress.Track>
-              <Progress.Range />
-            </Progress.Track>
-          </Progress.Root>
-          <Text fontSize="xs" mt={2} color="gray.600">
-            {stats.requestsByStatus.in_progress} в работе, {stats.requestsByStatus.new} новых
-          </Text>
         </Stat.Root>
         
+        {/* В работе */}
         <Stat.Root bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
-          <Stat.Label fontSize="sm" color="gray.600">Новые показания</Stat.Label>
-          <Stat.ValueText fontSize="3xl" fontWeight="bold">{stats.pendingReadings}</Stat.ValueText>
-          <Stat.HelpText fontSize="sm">ожидают проверки</Stat.HelpText>
-          <Button 
-            as={RouterLink} 
-            to="/worker/meter-readings" 
-            size="sm" 
-            colorPalette="teal"
-            color="#646cff"
-            variant="outline"
-            mt={4}
-            w="full"
-          >
-            Проверить
-          </Button>
+          <Stat.Label fontSize="sm" color="gray.600">В работе</Stat.Label>
+          <Stat.ValueText fontSize="3xl" fontWeight="bold">
+            {stats.inProgressRequests}
+          </Stat.ValueText>
+          <Stat.HelpText fontSize="sm">активные заявки</Stat.HelpText>
         </Stat.Root>
         
+        {/* Выполнено */}
         <Stat.Root bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
-          <Stat.Label fontSize="sm" color="gray.600">Непрочитанные сообщения</Stat.Label>
-          <Stat.ValueText fontSize="3xl" fontWeight="bold">{stats.unreadMessages}</Stat.ValueText>
-          <Stat.HelpText fontSize="sm">от жильцов</Stat.HelpText>
-          <Button as={RouterLink} to="/worker/messages" size="sm"  colorPalette="teal" color="#646cff"variant="outline" mt={4} w="full">
-            Прочитать
-          </Button>
-        </Stat.Root>
-
-        <Stat.Root bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
-          <Stat.Label fontSize="sm" color="gray.600">Задачи на сегодня</Stat.Label>
-          <Stat.ValueText fontSize="3xl" fontWeight="bold">{stats.todayTasks}</Stat.ValueText>
-          <Stat.HelpText fontSize="sm">плановые работы</Stat.HelpText>
+          <Stat.Label fontSize="sm" color="gray.600">Выполнено</Stat.Label>
+          <Stat.ValueText fontSize="3xl" fontWeight="bold">
+            {stats.completedRequests}
+          </Stat.ValueText>
+          <Stat.HelpText fontSize="sm">закрытые заявки</Stat.HelpText>
         </Stat.Root>
       </SimpleGrid>
 
+      {/* Прогресс выполнения */}
       <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6}>
+        <Box bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
+          <Heading size="md" mb={4}>Статусы заявок</Heading>
+          <VStack align="stretch" gap={3}>
+            <Box>
+              <HStack justify="space-between" mb={1}>
+                <Text fontSize="sm">Открытые</Text>
+                <Text fontSize="sm" fontWeight="bold">{stats.openRequests}</Text>
+              </HStack>
+              <Progress.Root value={(stats.openRequests / stats.totalRequests) * 100 || 0}>
+                <Progress.Track>
+                  <Progress.Range bg="blue.500" />
+                </Progress.Track>
+              </Progress.Root>
+            </Box>
+            <Box>
+              <HStack justify="space-between" mb={1}>
+                <Text fontSize="sm">В работе</Text>
+                <Text fontSize="sm" fontWeight="bold">{stats.inProgressRequests}</Text>
+              </HStack>
+              <Progress.Root value={(stats.inProgressRequests / stats.totalRequests) * 100 || 0}>
+                <Progress.Track>
+                  <Progress.Range bg="yellow.500" />
+                </Progress.Track>
+              </Progress.Root>
+            </Box>
+            <Box>
+              <HStack justify="space-between" mb={1}>
+                <Text fontSize="sm">Выполнено</Text>
+                <Text fontSize="sm" fontWeight="bold">{stats.completedRequests}</Text>
+              </HStack>
+              <Progress.Root value={(stats.completedRequests / stats.totalRequests) * 100 || 0}>
+                <Progress.Track>
+                  <Progress.Range bg="green.500" />
+                </Progress.Track>
+              </Progress.Root>
+            </Box>
+            <Box>
+              <HStack justify="space-between" mb={1}>
+                <Text fontSize="sm">Отклонено</Text>
+                <Text fontSize="sm" fontWeight="bold">{stats.rejectedRequests}</Text>
+              </HStack>
+              <Progress.Root value={(stats.rejectedRequests / stats.totalRequests) * 100 || 0}>
+                <Progress.Track>
+                  <Progress.Range bg="red.500" />
+                </Progress.Track>
+              </Progress.Root>
+            </Box>
+          </VStack>
+        </Box>
+
+        {/* Последние заявки */}
         <Box bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
           <HStack justify="space-between" mb={4}>
             <Heading size="md">Последние заявки</Heading>
@@ -106,106 +216,27 @@ export default function WorkerDashboard() {
             </Button>
           </HStack>
           
-          {stats.recentRequests?.length > 0 ? (
+          {stats.recentRequests.length > 0 ? (
             <VStack align="stretch" gap={3}>
               {stats.recentRequests.map((request) => (
-                <Box key={request.id} p={4} bg="gray.50" rounded="md" borderWidth="1px">
+                <Box key={request.id} p={3} bg="gray.50" rounded="md" borderWidth="1px">
                   <HStack justify="space-between" mb={2}>
                     <Text fontWeight="bold">№{request.id} {request.title}</Text>
-                    <Badge 
-                      colorPalette={
-                        request.status === 'new' ? 'blue' : 
-                        request.status === 'in_progress' ? 'yellow' : 'green'
-                      }
-                      px={2}
-                      py={1}
-                      borderRadius="full"
-                    >
-                      {request.status === 'new' ? 'Новая' : 
-                       request.status === 'in_progress' ? 'В работе' : 'Выполнена'}
+                    <Badge colorPalette={getStatusColor(request.status)} px={2} py={1} borderRadius="full">
+                      {getStatusText(request.status)}
                     </Badge>
                   </HStack>
                   <Text fontSize="sm" color="gray.600">
-                    {request.userName} • кв. {request.apartment}
-                  </Text>
-                  <Text fontSize="xs" color="gray.500" mt={2}>
-                    {new Date(request.createdAt).toLocaleString('ru-RU')}
+                    {request.creatorName} • {formatDate(request.createdAt)}
                   </Text>
                 </Box>
               ))}
             </VStack>
           ) : (
             <Text color="gray.500" textAlign="center" py={4}>
-              Нет новых заявок
+              Нет заявок
             </Text>
           )}
-        </Box>
-
-        <Box bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
-          <Heading size="md" mb={4}>Быстрые действия</Heading>
-          <SimpleGrid columns={2} gap={4}>
-            <Button 
-              as={RouterLink} 
-              to="/worker/requests" 
-              h="60px" 
-              colorPalette="teal"
-              color="#646cff"
-              variant="outline"
-
-            >
-              Все заявки
-            </Button>
-            <Button 
-              as={RouterLink} 
-              to="/worker/meter-readings" 
-              h="60px" 
-              colorPalette="teal"
-              color="#646cff"
-              variant="outline"
-            >
-              Показания
-            </Button>
-            <Button 
-              as={RouterLink} 
-              to="/worker/users" 
-              h="60px" 
-              colorPalette="teal"
-              color="#646cff"
-              variant="outline"
-            >
-              Жильцы
-            </Button>
-            <Button 
-              as={RouterLink} 
-              to="/worker/reports" 
-              h="60px" 
-              colorPalette="teal"
-              color="#646cff"
-              variant="outline"
-            >
-              Отчёты
-            </Button>
-            <Button 
-              as={RouterLink} 
-              to="/worker/schedule" 
-              h="60px" 
-              colorPalette="teal"
-              color="#646cff"
-              variant="outline"
-            >
-              График работ
-            </Button>
-            <Button 
-              as={RouterLink} 
-              to="/worker/messages" 
-              h="60px" 
-              colorPalette="teal"
-              color="#646cff"
-              variant="outline"
-            >
-              Сообщения
-            </Button>
-          </SimpleGrid>
         </Box>
       </SimpleGrid>
     </Box>

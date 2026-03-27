@@ -1,5 +1,4 @@
-// pages/UserProfile.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Heading, 
@@ -19,38 +18,86 @@ import {
   FaUser,
   FaPhone,
   FaEnvelope,
-  FaPencilAlt,
   FaCheck,
   FaTimes,
   FaMapMarkerAlt,
   FaHome,
   FaBuilding
 } from 'react-icons/fa';
-
-// Импортируем вынесенный компонент
-import YandexMap from '../../components/ui/YandexMap'; // Путь может отличаться в зависимости от вашей структуры
+import YandexMap from '../../components/ui/YandexMap';
+import api from '../../api/instance';
 
 export default function UserProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: 'Иван',
-    lastName: 'Иванов',
-    patronymic: 'Иванович',
-    phone: '+7 (999) 000-00-00',
-    email: 'ivanov@example.com',
-    accountNumber:'1234567890',
-    address: 'г. Город, ул. Примерная, д. 1, кв. 1',
-    flatNumber: '1',
-    buildingNumber: '1',
-    street: 'ул. Примерная',
-    city: 'Город'
+    firstName: '',
+    lastName: '',
+    patronymic: '',
+    phone: '',
+    email: '',
+    accountNumber: '',
+    address: '',
+    flatNumber: '',
+    buildingNumber: '',
+    street: '',
+    city: '',
+    role: ''
   });
   
   const [originalData, setOriginalData] = useState({ ...formData });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // ... остальной код без изменений
+  // Загрузка данных профиля
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/users/profile');
+      const user = response.data;
+      
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        patronymic: user.middleName || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        accountNumber: user.accountNumber || '',
+        address: user.address?.fullAddress || '',
+        flatNumber: user.address?.flat || '',
+        buildingNumber: user.address?.house || '',
+        street: user.address?.street || '',
+        city: user.address?.city || '',
+        role: user.role || 'User'
+      });
+      
+      setOriginalData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        patronymic: user.middleName || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        accountNumber: user.accountNumber || '',
+        address: user.address?.fullAddress || '',
+        flatNumber: user.address?.flat || '',
+        buildingNumber: user.address?.house || '',
+        street: user.address?.street || '',
+        city: user.address?.city || '',
+        role: user.role || 'User'
+      });
+      
+    } catch (error) {
+      console.error('Ошибка загрузки профиля:', error);
+      showToast('Ошибка', 'Не удалось загрузить данные профиля', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const showToast = (title, description, type = 'info') => {
     toaster.create({
       title,
@@ -77,64 +124,69 @@ export default function UserProfile() {
   };
 
   const validateForm = () => {
-  const newErrors = {};
-  
+    const newErrors = {};
+    
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Фамилия обязательна';
+    } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.lastName)) {
+      newErrors.lastName = 'Только буквы и дефис';
+    } else if (formData.lastName.length > 64) {
+      newErrors.lastName = 'Не более 64 символов';
+    }
+    
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'Имя обязательно';
+    } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.firstName)) {
+      newErrors.firstName = 'Только буквы и дефис';
+    } else if (formData.firstName.length > 64) {
+      newErrors.firstName = 'Не более 64 символов';
+    }
+    
+    if (formData.patronymic.trim() && !/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.patronymic)) {
+      newErrors.patronymic = 'Только буквы и дефис';
+    } else if (formData.patronymic.length > 64) {
+      newErrors.patronymic = 'Не более 64 символов';
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Телефон обязателен';
+    } else if (!/^[\d\s\+\-\(\)]+$/.test(formData.phone)) {
+      newErrors.phone = 'Неверный формат телефона';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email обязателен';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Неверный формат email';
+    }
+    
+    if (!formData.accountNumber.trim()) {
+      newErrors.accountNumber = 'Номер лицевого счёта обязателен';
+    } else if (!/^\d+$/.test(formData.accountNumber)) {
+      newErrors.accountNumber = 'Только цифры';
+    } else if (!/^\d{10,12}$/.test(formData.accountNumber)) {
+      newErrors.accountNumber = 'Номер должен содержать 10-12 цифр';
+    }
+    
+    if (!formData.address.trim()) {
+      newErrors.address = 'Адрес обязателен';
+    }
+    
+    if (!formData.flatNumber.trim()) {
+      newErrors.flatNumber = 'Номер квартиры обязателен';
+    } else if (!/^\d+$/.test(formData.flatNumber)) {
+      newErrors.flatNumber = 'Только цифры';
+    }
+    
+    if (!formData.buildingNumber.trim()) {
+      newErrors.buildingNumber = 'Номер дома обязателен';
+    } else if (!/^\d+[а-яА-Я]?$/.test(formData.buildingNumber)) {
+      newErrors.buildingNumber = 'Только цифры и буква (например: 15 или 15А)';
+    }
 
-  if (!formData.lastName.trim()) {
-    newErrors.lastName = 'Фамилия обязательна';
-  } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.lastName)) {
-    newErrors.lastName = 'Только буквы и дефис';
-  } else if (formData.lastName.length > 64) {
-    newErrors.lastName = 'Не более 64 символов';
-  }
-  
-
-  if (!formData.firstName.trim()) {
-    newErrors.firstName = 'Имя обязательно';
-  } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.firstName)) {
-    newErrors.firstName = 'Только буквы и дефис';
-  } else if (formData.firstName.length > 64) {
-    newErrors.firstName = 'Не более 64 символов';
-  }
-  
- 
-  if (formData.patronymic.trim() && !/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.patronymic)) {
-    newErrors.patronymic = 'Только буквы и дефис';
-  } else if (formData.patronymic.length > 64) {
-    newErrors.patronymic = 'Не более 64 символов';
-  }
-  
-
-  if (!formData.phone.trim()) {
-    newErrors.phone = 'Телефон обязателен';
-  } else if (!/^[\d\s\+\-\(\)]+$/.test(formData.phone)) {
-    newErrors.phone = 'Неверный формат телефона';
-  }
-  
-
-  if (!formData.email.trim()) {
-    newErrors.email = 'Email обязателен';
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-    newErrors.email = 'Неверный формат email';
-  }
-  
-
-  if (!formData.accountNumber.trim()) {
-    newErrors.accountNumber = 'Номер лицевого счёта обязателен';
-  } else if (!/^\d+$/.test(formData.accountNumber)) {
-    newErrors.accountNumber = 'Только цифры';
-  } else if (!/^\d{10,12}$/.test(formData.accountNumber)) {
-    newErrors.accountNumber = 'Номер должен содержать 10-12 цифр';
-  }
-  
-
-  if (!formData.address.trim()) {
-    newErrors.address = 'Адрес обязателен';
-  }
-
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -144,13 +196,29 @@ export default function UserProfile() {
 
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Обновляем профиль
+      await api.patch('/users/profile', {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        middleName: formData.patronymic,
+        phone: formData.phone,
+        email: formData.email,
+        accountNumber: formData.accountNumber,
+        address: {
+          street: formData.street,
+          house: formData.buildingNumber,
+          flat: formData.flatNumber,
+          city: formData.city,
+          fullAddress: formData.address
+        }
+      });
       
       setOriginalData({ ...formData });
       setIsEditing(false);
       
       showToast('Успешно', 'Данные профиля обновлены', 'success');
     } catch (error) {
+      console.error('Ошибка сохранения:', error);
       showToast('Ошибка', 'Не удалось сохранить изменения', 'error');
     } finally {
       setIsLoading(false);
@@ -167,10 +235,28 @@ export default function UserProfile() {
     setIsEditing(true);
   };
 
+  const getRoleText = (role) => {
+    switch(role) {
+      case 'User': return 'Жилец';
+      case 'Worker': return 'Сотрудник';
+      case 'Admin': return 'Администратор';
+      case 'CompanyOwner': return 'Владелец компании';
+      default: return 'Жилец';
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box p={8} textAlign="center">
+        <Text>Загрузка профиля...</Text>
+      </Box>
+    );
+  }
+
   return (
     <Box>
       <HStack justify="space-between" mb={4}>
-        <Heading size="lg"color="black">Профиль жильца</Heading>
+        <Heading size="lg" color="black">Профиль жильца</Heading>
         {!isEditing ? (
           <Button 
             colorPalette="teal"
@@ -313,40 +399,37 @@ export default function UserProfile() {
                   )}
                   <Field.ErrorText>{errors.email}</Field.ErrorText>
                 </Field.Root>
-                
-  {/* После email или перед адресом */}
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                <Field.Root invalid={errors.accountNumber}>
-                  <Field.Label>
-                    <HStack spacing={1}>
+              </SimpleGrid>
+
+              {/* Лицевой счёт */}
+              <Field.Root invalid={errors.accountNumber}>
+                <Field.Label>
+                  <HStack spacing={1}>
                     <Text>№ лицевого счёта</Text>
                   </HStack>
-               </Field.Label>
-    {isEditing ? (
-      <Input
-        name="accountNumber"
-        value={formData.accountNumber}
-        onChange={handleInputChange}
-        placeholder="10-12 цифр"
-        maxLength={12}
-      />
-    ) : (
-      <Text p={2} bg="gray.50" borderRadius="md">
-        {formData.accountNumber || '—'}
-      </Text>
-    )}
-    <Field.ErrorText>{errors.accountNumber}</Field.ErrorText>
-  </Field.Root>
-</SimpleGrid>
-                
-              </SimpleGrid>
+                </Field.Label>
+                {isEditing ? (
+                  <Input
+                    name="accountNumber"
+                    value={formData.accountNumber}
+                    onChange={handleInputChange}
+                    placeholder="10-12 цифр"
+                    maxLength={12}
+                  />
+                ) : (
+                  <Text p={2} bg="gray.50" borderRadius="md">
+                    {formData.accountNumber || '—'}
+                  </Text>
+                )}
+                <Field.ErrorText>{errors.accountNumber}</Field.ErrorText>
+              </Field.Root>
 
               <Box borderBottom="1px solid" borderColor="gray.200" my={2} />
 
               <Field.Root>
                 <Field.Label>Роль</Field.Label>
                 <Text p={2} bg="gray.50" borderRadius="md" fontWeight="bold">
-                  Жилец
+                  {getRoleText(formData.role)}
                 </Text>
               </Field.Root>
             </VStack>
@@ -356,8 +439,8 @@ export default function UserProfile() {
             <Card.Footer>
               <HStack spacing={3} justify="flex-end" width="full">
                 <Button
-                colorPalette="teal"
-                 color="#646cff"
+                  colorPalette="teal"
+                  color="#646cff"
                   variant="outline"
                   isLoading={isLoading}
                   loadingText="Сохранение"
@@ -369,13 +452,12 @@ export default function UserProfile() {
                 </Button>
                 <Button
                   leftIcon={<FaCheck />}
-
-            colorPalette="teal"
-            color="#646cff"
-            variant="outline"
-            onClick={handleSave}
-            isLoading={isLoading}
-            loadingText="Сохранение"
+                  colorPalette="teal"
+                  color="#646cff"
+                  variant="outline"
+                  onClick={handleSave}
+                  isLoading={isLoading}
+                  loadingText="Сохранение"
                 >
                   Сохранить изменения
                 </Button>
@@ -416,6 +498,53 @@ export default function UserProfile() {
                 <Field.ErrorText>{errors.address}</Field.ErrorText>
               </Field.Root>
 
+              {/* Квартира и Дом */}
+              <SimpleGrid columns={2} spacing={4}>
+                <Field.Root invalid={errors.flatNumber}>
+                  <Field.Label>
+                    <HStack spacing={1}>
+                      <FaBuilding />
+                      <Text>Квартира</Text>
+                    </HStack>
+                  </Field.Label>
+                  {isEditing ? (
+                    <Input
+                      name="flatNumber"
+                      value={formData.flatNumber}
+                      onChange={handleInputChange}
+                      placeholder="Номер квартиры"
+                    />
+                  ) : (
+                    <Text p={2} bg="gray.50" borderRadius="md">
+                      {formData.flatNumber}
+                    </Text>
+                  )}
+                  <Field.ErrorText>{errors.flatNumber}</Field.ErrorText>
+                </Field.Root>
+
+                <Field.Root invalid={errors.buildingNumber}>
+                  <Field.Label>
+                    <HStack spacing={1}>
+                      <FaHome />
+                      <Text>Дом</Text>
+                    </HStack>
+                  </Field.Label>
+                  {isEditing ? (
+                    <Input
+                      name="buildingNumber"
+                      value={formData.buildingNumber}
+                      onChange={handleInputChange}
+                      placeholder="Номер дома"
+                    />
+                  ) : (
+                    <Text p={2} bg="gray.50" borderRadius="md">
+                      {formData.buildingNumber}
+                    </Text>
+                  )}
+                  <Field.ErrorText>{errors.buildingNumber}</Field.ErrorText>
+                </Field.Root>
+              </SimpleGrid>
+
               <Box>
                 <Text fontWeight="medium" mb={2}>Выберите адрес на карте</Text>
                 <YandexMap 
@@ -426,23 +555,6 @@ export default function UserProfile() {
                   Нажмите на карте или найдите адрес через поиск
                 </Text>
               </Box>
-
-              <SimpleGrid columns={2} spacing={4} mt={2}>
-                <Box>
-                  <HStack spacing={1} color="gray.600" mb={1}>
-                    <FaBuilding />
-                    <Text fontSize="sm">Квартира</Text>
-                  </HStack>
-                  <Text fontWeight="medium">{formData.flatNumber}</Text>
-                </Box>
-                <Box>
-                  <HStack spacing={1} color="gray.600" mb={1}>
-                    <FaHome />
-                    <Text fontSize="sm">Дом</Text>
-                  </HStack>
-                  <Text fontWeight="medium">{formData.buildingNumber}</Text>
-                </Box>
-              </SimpleGrid>
             </VStack>
           </Card.Body>
         </Card.Root>

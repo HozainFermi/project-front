@@ -1,74 +1,216 @@
-import { Box, Heading, Table, Badge, Button, Input, HStack, VStack, Text } from '@chakra-ui/react';
-import { useState } from 'react';
+import { 
+  Box, Heading, Table, Badge, Button, Input, HStack, Text, 
+  VStack, Textarea, Dialog, Portal, IconButton 
+} from '@chakra-ui/react';
+import { useState, useEffect } from 'react';
+import { FaPlus, FaEdit, FaTrash, FaTimes } from 'react-icons/fa';
 import * as Buttons from "../../components/ui/buttons";
+import api from '../../api/instance';
+import { toaster } from "../../components/ui/toaster";
 
 export default function UserRequests() {
-  const [activeActionId, setActiveActionId] = useState(null);
-  const [actionType, setActionType] = useState(null);
-  const [editingRequest, setEditingRequest] = useState(null);
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Состояния для модального окна деталей
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [requests, setRequests] = useState([
-    {
-      id: 1,
-      title: 'Протечка в подвале',
-      status: 'closed',
-      date: '15.01.2026',
-      description: 'Протечка в подвале, нужен сантехник'
+  // Состояния для модального окна создания заявки
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    description: ''
+  });
+  const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/users/requests');
+      setRequests(response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки заявок:', error);
+      toaster.create({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить заявки',
+        type: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const handleEdit = (id) => {
-    const request = requests.find(r => r.id === id);
-    setEditingRequest({ ...request });
-    setActiveActionId(id);
-    setActionType('edit');
-  };
-
-  const handleOpen = (id) => {
-    setActiveActionId(id);
-    setActionType('open');
-  };
-
-  const handleCancel = () => {
-    setActiveActionId(null);
-    setActionType(null);
-    setEditingRequest(null);
-  };
-
-  const handleConfirmEdit = () => {
-    setRequests(prev => prev.map(req => 
-      req.id === editingRequest.id ? editingRequest : req
-    ));
-    handleCancel();
-  };
-
-  const handleEditChange = (field, value) => {
-    setEditingRequest(prev => ({ ...prev, [field]: value }));
-  };
-
-  const isActive = (id, type) => {
-    return activeActionId === id && actionType === type;
   };
 
   const getBadgeColor = (status) => {
-    return status === 'closed' ? 'green' : 'yellow';
+    switch(status) {
+      case 'Completed': return 'green';
+      case 'Rejected': return 'red';
+      case 'InProgress': return 'yellow';
+      case 'Accepted': return 'blue';
+      default: return 'gray';
+    }
   };
 
   const getStatusText = (status) => {
-    return status === 'closed' ? 'Закрыта' : 'В работе';
+    switch(status) {
+      case 'Completed': return 'Выполнена';
+      case 'Rejected': return 'Отклонена';
+      case 'InProgress': return 'В работе';
+      case 'Accepted': return 'Принята';
+      default: return 'Создана';
+    }
   };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+  };
+
+  const handleOpenDetails = (request) => {
+    setSelectedRequest(request);
+    setEditForm({
+      title: request.title,
+      description: request.description || ''
+    });
+    setIsEditing(false);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRequest(null);
+    setIsEditing(false);
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedRequest) return;
+    
+    setIsSubmitting(true);
+    try {
+      // TODO: когда появится эндпоинт PATCH /requests/<id>
+      setRequests(prev => prev.map(req =>
+        req.id === selectedRequest.id
+          ? { ...req, title: editForm.title, description: editForm.description }
+          : req
+      ));
+      setSelectedRequest(prev => ({
+        ...prev,
+        title: editForm.title,
+        description: editForm.description
+      }));
+      
+      toaster.create({
+        title: 'Успешно',
+        description: 'Заявка обновлена',
+        type: 'success',
+        duration: 3000,
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Ошибка сохранения:', error);
+      toaster.create({
+        title: 'Ошибка',
+        description: 'Не удалось сохранить изменения',
+        type: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateChange = (e) => {
+    const { name, value } = e.target;
+    setCreateForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateSubmit = async () => {
+    if (!createForm.title.trim()) {
+      toaster.create({
+        title: 'Ошибка',
+        description: 'Введите тему заявки',
+        type: 'error',
+        duration: 3000,
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const response = await api.post('/requests', {
+        title: createForm.title,
+        description: createForm.description || '',
+        status: 'Created'
+      });
+      
+      setRequests(prev => [response.data, ...prev]);
+      
+      toaster.create({
+        title: 'Успешно',
+        description: 'Заявка создана',
+        type: 'success',
+        duration: 3000,
+      });
+      
+      setIsCreateModalOpen(false);
+      setCreateForm({ title: '', description: '' });
+    } catch (error) {
+      console.error('Ошибка создания заявки:', error);
+      toaster.create({
+        title: 'Ошибка',
+        description: 'Не удалось создать заявку',
+        type: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box p={8} textAlign="center">
+        <Text>Загрузка заявок...</Text>
+      </Box>
+    );
+  }
 
   return (
     <Box>
-      <Heading size="lg" mb={4}>
-        Заявки
-      </Heading>
+      <HStack justify="space-between" mb={4}>
+        <Heading size="lg">Мои заявки</Heading>
+        <Buttons.PurpleButton onClick={() => setIsCreateModalOpen(true)}>
+          + Новая заявка
+        </Buttons.PurpleButton>
+      </HStack>
       
-      <Table.Root bg="white" rounded="lg" shadow="sm">
+      <Table.Root bg="white" rounded="lg" shadow="sm" overflowX="auto">
         <Table.Header>
           <Table.Row>
             <Table.ColumnHeader>№</Table.ColumnHeader>
             <Table.ColumnHeader>Тема</Table.ColumnHeader>
+            <Table.ColumnHeader>Описание</Table.ColumnHeader>
             <Table.ColumnHeader>Статус</Table.ColumnHeader>
             <Table.ColumnHeader>Дата</Table.ColumnHeader>
             <Table.ColumnHeader textAlign="end">Действия</Table.ColumnHeader>
@@ -76,71 +218,195 @@ export default function UserRequests() {
         </Table.Header>
         
         <Table.Body>
-          {requests.map((request) => {
-            const isEditing = isActive(request.id, 'edit');
-            const isOpening = isActive(request.id, 'open');
-            
-            return (
+          {requests.length === 0 ? (
+            <Table.Row>
+              <Table.Cell colSpan={6} textAlign="center">
+                <Text py={4} color="gray.500">У вас пока нет заявок</Text>
+              </Table.Cell>
+            </Table.Row>
+          ) : (
+            requests.map((request) => (
               <Table.Row key={request.id}>
                 <Table.Cell>{request.id}</Table.Cell>
+                <Table.Cell>{request.title}</Table.Cell>
                 <Table.Cell>
-                  {isEditing ? (
-                    <Input
-                      value={editingRequest?.title || ''}
-                      onChange={(e) => handleEditChange('title', e.target.value)}
-                      size="sm"
-                    />
-                  ) : (
-                    request.title
-                  )}
+                  <Text noOfLines={1} maxW="250px">
+                    {request.description || '—'}
+                  </Text>
                 </Table.Cell>
                 <Table.Cell>
-                  {/* Статус — только для чтения, без поля ввода */}
                   <Badge colorPalette={getBadgeColor(request.status)}>
                     {getStatusText(request.status)}
                   </Badge>
                 </Table.Cell>
-                <Table.Cell>
-                  {isEditing ? (
-                    <Input
-                      value={editingRequest?.date || ''}
-                      onChange={(e) => handleEditChange('date', e.target.value)}
-                      size="sm"
-                    />
-                  ) : (
-                    request.date
-                  )}
-                </Table.Cell>
+                <Table.Cell>{formatDate(request.createdAt || request.date)}</Table.Cell>
                 <Table.Cell textAlign="end">
-                  {!isEditing && !isOpening ? (
-                    <HStack gap={2} justify="flex-end">
-                      <Buttons.PurpleButton onClick={() => handleEdit(request.id)}>
-                        Редактировать
-                      </Buttons.PurpleButton>
-                      <Buttons.PurpleButton onClick={() => handleOpen(request.id)}>
-                        Открыть
-                      </Buttons.PurpleButton>
-                    </HStack>
-                  ) : isEditing ? (
-                    <HStack gap={2} justify="flex-end">
-                      <Buttons.PrimaryButton onClick={handleConfirmEdit}>
-                        Подтвердить
-                      </Buttons.PrimaryButton>
-                      <Buttons.DangerButton onClick={handleCancel}>
-                        Отмена
-                      </Buttons.DangerButton>
-                    </HStack>
-                  ) : (
-                    <Buttons.DangerButton onClick={handleCancel}>
-                      Отмена
-                    </Buttons.DangerButton>
-                  )}
+                  <Buttons.PurpleButton 
+                    size="sm" 
+                    onClick={() => handleOpenDetails(request)}
+                  >
+                    Открыть
+                  </Buttons.PurpleButton>
                 </Table.Cell>
               </Table.Row>
-            );
-          })}
+            ))
+          )}
         </Table.Body>
       </Table.Root>
+
+      {/* Модальное окно создания заявки */}
+      <Dialog.Root open={isCreateModalOpen} onOpenChange={() => setIsCreateModalOpen(false)}>
+        <Portal>
+          <Dialog.Backdrop />
+          <Dialog.Positioner>
+            <Dialog.Content>
+              <Dialog.Header>
+                <Dialog.Title>Новая заявка</Dialog.Title>
+                <Dialog.CloseTrigger as={IconButton} variant="ghost" size="sm">
+                  <FaTimes />
+                </Dialog.CloseTrigger>
+              </Dialog.Header>
+              <Dialog.Body>
+                <VStack align="stretch" gap={4}>
+                  <Box>
+                    <Text fontWeight="bold" mb={1}>Тема</Text>
+                    <Input
+                      name="title"
+                      value={createForm.title}
+                      onChange={handleCreateChange}
+                      placeholder="Краткое описание проблемы"
+                    />
+                  </Box>
+                  <Box>
+                    <Text fontWeight="bold" mb={1}>Описание</Text>
+                    <Textarea
+                      name="description"
+                      value={createForm.description}
+                      onChange={handleCreateChange}
+                      placeholder="Подробное описание проблемы"
+                      rows={4}
+                    />
+                  </Box>
+                </VStack>
+              </Dialog.Body>
+              <Dialog.Footer>
+                <HStack gap={3}>
+                  <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                    Отмена
+                  </Button>
+                  <Buttons.PrimaryButton 
+                    onClick={handleCreateSubmit} 
+                    isLoading={isCreating}
+                    loadingText="Создание..."
+                  >
+                    Создать
+                  </Buttons.PrimaryButton>
+                </HStack>
+              </Dialog.Footer>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Portal>
+      </Dialog.Root>
+
+      {/* Модальное окно деталей заявки */}
+      <Dialog.Root open={isModalOpen} onOpenChange={handleCloseModal}>
+        <Portal>
+          <Dialog.Backdrop />
+          <Dialog.Positioner>
+            <Dialog.Content>
+              <Dialog.Header>
+                <Dialog.Title>Заявка #{selectedRequest?.id}</Dialog.Title>
+                <Dialog.CloseTrigger as={IconButton} variant="ghost" size="sm">
+                  <FaTimes />
+                </Dialog.CloseTrigger>
+              </Dialog.Header>
+              <Dialog.Body>
+                <VStack align="stretch" gap={4}>
+                  <Box>
+                    <Text fontWeight="bold" fontSize="sm" color="gray.500">Тема</Text>
+                    {isEditing ? (
+                      <Input
+                        name="title"
+                        value={editForm.title}
+                        onChange={handleEditChange}
+                        size="sm"
+                        mt={1}
+                      />
+                    ) : (
+                      <Text mt={1}>{selectedRequest?.title}</Text>
+                    )}
+                  </Box>
+
+                  <Box>
+                    <Text fontWeight="bold" fontSize="sm" color="gray.500">Описание</Text>
+                    {isEditing ? (
+                      <Textarea
+                        name="description"
+                        value={editForm.description}
+                        onChange={handleEditChange}
+                        size="sm"
+                        rows={4}
+                        mt={1}
+                      />
+                    ) : (
+                      <Text mt={1} whiteSpace="pre-wrap">
+                        {selectedRequest?.description || 'Нет описания'}
+                      </Text>
+                    )}
+                  </Box>
+
+                  <Box>
+                    <Text fontWeight="bold" fontSize="sm" color="gray.500">Статус</Text>
+                    <Badge colorPalette={getBadgeColor(selectedRequest?.status)} mt={1}>
+                      {getStatusText(selectedRequest?.status)}
+                    </Badge>
+                  </Box>
+
+                  <Box>
+                    <Text fontWeight="bold" fontSize="sm" color="gray.500">Дата создания</Text>
+                    <Text mt={1}>{formatDate(selectedRequest?.createdAt || selectedRequest?.date)}</Text>
+                  </Box>
+
+                  {selectedRequest?.assigneeName && (
+                    <Box>
+                      <Text fontWeight="bold" fontSize="sm" color="gray.500">Исполнитель</Text>
+                      <Text mt={1}>{selectedRequest.assigneeName}</Text>
+                    </Box>
+                  )}
+                </VStack>
+              </Dialog.Body>
+              <Dialog.Footer>
+                <HStack gap={3}>
+                  {!isEditing ? (
+                    <>
+                      <Button variant="outline" onClick={handleCloseModal}>
+                        Закрыть
+                      </Button>
+                      {/* Редактирование пока отключено, нет эндпоинта */}
+                      {/* <Buttons.PurpleButton onClick={handleEdit}>
+                        Редактировать
+                      </Buttons.PurpleButton> */}
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="outline" onClick={() => setIsEditing(false)}>
+                        Отмена
+                      </Button>
+                      <Buttons.PrimaryButton 
+                        onClick={handleSaveEdit} 
+                        isLoading={isSubmitting}
+                        loadingText="Сохранение"
+                      >
+                        Сохранить
+                      </Buttons.PrimaryButton>
+                    </>
+                  )}
+                </HStack>
+              </Dialog.Footer>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Portal>
+      </Dialog.Root>
     </Box>
   );
 }
