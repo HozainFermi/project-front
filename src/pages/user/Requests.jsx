@@ -21,6 +21,7 @@ export default function UserRequests() {
     description: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Состояния для модального окна создания заявки
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function UserRequests() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/users/requests');
+      const response = await api.get('/api/users/requests');
       setRequests(response.data);
     } catch (error) {
       console.error('Ошибка загрузки заявок:', error);
@@ -108,7 +109,11 @@ export default function UserRequests() {
     
     setIsSubmitting(true);
     try {
-      // TODO: когда появится эндпоинт PATCH /requests/<id>
+      await api.put(`/api/users/requests/${selectedRequest.id}`, {
+        title: editForm.title,
+        description: editForm.description
+      });
+      
       setRequests(prev => prev.map(req =>
         req.id === selectedRequest.id
           ? { ...req, title: editForm.title, description: editForm.description }
@@ -131,12 +136,47 @@ export default function UserRequests() {
       console.error('Ошибка сохранения:', error);
       toaster.create({
         title: 'Ошибка',
-        description: 'Не удалось сохранить изменения',
+        description: error.response?.data?.message || 'Не удалось сохранить изменения',
         type: 'error',
         duration: 3000,
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Функция удаления заявки
+  const handleDelete = async () => {
+    if (!selectedRequest) return;
+    
+    const confirmed = window.confirm(`Удалить заявку #${selectedRequest.id}? Это действие необратимо.`);
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await api.delete(`/api/users/requests/${selectedRequest.id}`);
+      
+      // Удаляем из локального списка
+      setRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
+      
+      toaster.create({
+        title: 'Успешно',
+        description: 'Заявка удалена',
+        type: 'success',
+        duration: 3000,
+      });
+      
+      handleCloseModal();
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+      toaster.create({
+        title: 'Ошибка',
+        description: error.response?.data?.message || 'Не удалось удалить заявку',
+        type: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -158,10 +198,9 @@ export default function UserRequests() {
 
     setIsCreating(true);
     try {
-      const response = await api.post('/requests', {
+      const response = await api.post('/api/users/requests', {
         title: createForm.title,
-        description: createForm.description || '',
-        status: 'Created'
+        description: createForm.description || ''
       });
       
       setRequests(prev => [response.data, ...prev]);
@@ -179,7 +218,7 @@ export default function UserRequests() {
       console.error('Ошибка создания заявки:', error);
       toaster.create({
         title: 'Ошибка',
-        description: 'Не удалось создать заявку',
+        description: error.response?.data?.message || 'Не удалось создать заявку',
         type: 'error',
         duration: 3000,
       });
@@ -376,31 +415,42 @@ export default function UserRequests() {
                 </VStack>
               </Dialog.Body>
               <Dialog.Footer>
-                <HStack gap={3}>
-                  {!isEditing ? (
-                    <>
-                      <Button variant="outline" onClick={handleCloseModal}>
-                        Закрыть
-                      </Button>
-                      {/* Редактирование пока отключено, нет эндпоинта */}
-                      {/* <Buttons.PurpleButton onClick={handleEdit}>
-                        Редактировать
-                      </Buttons.PurpleButton> */}
-                    </>
-                  ) : (
-                    <>
-                      <Button variant="outline" onClick={() => setIsEditing(false)}>
-                        Отмена
-                      </Button>
-                      <Buttons.PrimaryButton 
-                        onClick={handleSaveEdit} 
-                        isLoading={isSubmitting}
-                        loadingText="Сохранение"
-                      >
-                        Сохранить
-                      </Buttons.PrimaryButton>
-                    </>
-                  )}
+                <HStack gap={3} justify="space-between" width="full">
+                  <Button 
+                    colorPalette="red" 
+                    variant="outline" 
+                    leftIcon={<FaTrash />}
+                    onClick={handleDelete}
+                    isLoading={isDeleting}
+                    loadingText="Удаление..."
+                  >
+                    Удалить
+                  </Button>
+                  <HStack gap={3}>
+                    {!isEditing ? (
+                      <>
+                        <Button variant="outline" onClick={handleCloseModal}>
+                          Закрыть
+                        </Button>
+                        <Buttons.PurpleButton onClick={handleEdit}>
+                          Редактировать
+                        </Buttons.PurpleButton>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="outline" onClick={() => setIsEditing(false)}>
+                          Отмена
+                        </Button>
+                        <Buttons.PrimaryButton 
+                          onClick={handleSaveEdit} 
+                          isLoading={isSubmitting}
+                          loadingText="Сохранение"
+                        >
+                          Сохранить
+                        </Buttons.PrimaryButton>
+                      </>
+                    )}
+                  </HStack>
                 </HStack>
               </Dialog.Footer>
             </Dialog.Content>

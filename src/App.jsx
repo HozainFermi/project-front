@@ -5,7 +5,7 @@ import {
   redirect,
 } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { checkAuth } from './utils/auth';
+//import { checkAuth } from './utils/auth';
 import { authStore } from './api/authStore';
 
 // Лейауты
@@ -57,7 +57,8 @@ function AppInitializer({ children }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth().finally(() => setIsLoading(false));
+    // Просто убираем загрузку
+    setIsLoading(false);
   }, []);
 
   if (isLoading) {

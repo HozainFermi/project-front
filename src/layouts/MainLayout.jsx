@@ -46,7 +46,7 @@ export default function MainLayout() {
     { path: '/meters', label: 'Счётчики', icon: LuGauge },
     { path: '/requests', label: 'Заявки', icon: LuClipboardList },
     { path: '/news', label: 'Новости', icon: LuBuilding, badge: 2 },
-    { path: '/payments', label: 'Платежи', icon: LuCalendar },
+   // { path: '/payments', label: 'Платежи', icon: LuCalendar }, //платежи скрыты
     { path: '/settings', label: 'Настройки', icon: LuSettings },
   ];
 

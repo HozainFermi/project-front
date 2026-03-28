@@ -6,7 +6,7 @@ import * as Buttons from "../../components/ui/buttons";
 
 export default function Home() {
   const [dashboardData, setDashboardData] = useState({
-    lastMeterReading: null,
+    lastMeterReadingDate: null,
     openRequests: 0,
     userName: ''
   });
@@ -23,19 +23,18 @@ export default function Home() {
       // 1. Получаем данные пользователя из профиля
       let userName = 'жилец';
       try {
-        const profileResponse = await api.get('/users/profile');
+        const profileResponse = await api.get('/api/users/profile');
         const user = profileResponse.data;
         userName = `${user.lastName} ${user.firstName}`.trim() || 'жилец';
       } catch (error) {
         console.error('Ошибка загрузки профиля:', error);
       }
       
-      // 2. Получаем заявки пользователя
+      // 2. Получаем заявки пользователя и считаем открытые
       let openRequestsCount = 0;
       try {
-        const requestsResponse = await api.get('/users/requests');
+        const requestsResponse = await api.get('/api/users/requests');
         const requests = requestsResponse.data || [];
-        // Считаем открытые заявки (не Completed и не Rejected)
         openRequestsCount = requests.filter(
           req => req.status !== 'Completed' && req.status !== 'Rejected'
         ).length;
@@ -43,12 +42,23 @@ export default function Home() {
         console.error('Ошибка загрузки заявок:', error);
       }
       
-      // 3. Показания счётчиков (пока нет эндпоинта, оставляем мок)
-      // TODO: когда появится GET /users/meters, добавить
-      const lastMeterReading = null;
+      // 3. Получаем показания счётчиков — берём самую последнюю дату
+      let lastMeterReadingDate = null;
+      try {
+        const metersResponse = await api.get('/api/users/counters');
+        const meters = metersResponse.data || [];
+        if (meters.length > 0) {
+          const sortedMeters = [...meters].sort((a, b) => 
+            new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          lastMeterReadingDate = sortedMeters[0].createdAt;
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки показаний:', error);
+      }
       
       setDashboardData({
-        lastMeterReading,
+        lastMeterReadingDate,
         openRequests: openRequestsCount,
         userName
       });
@@ -60,6 +70,21 @@ export default function Home() {
     }
   };
 
+  // Проверяем, было ли показание передано менее 30 дней назад
+  const isRecentReading = () => {
+    if (!dashboardData.lastMeterReadingDate) return false;
+    const readingDate = new Date(dashboardData.lastMeterReadingDate);
+    const now = new Date();
+    const diffDays = (now - readingDate) / (1000 * 60 * 60 * 24);
+    return diffDays < 30;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+  };
+
   if (loading) {
     return (
       <Box textAlign="center" py={10}>
@@ -68,6 +93,8 @@ export default function Home() {
     );
   }
 
+  const hasRecentReading = isRecentReading();
+
   return (
     <Box>
       <Heading size="lg" color="black" mb={6}>
@@ -75,26 +102,43 @@ export default function Home() {
       </Heading>
 
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6} mb={8}>
-        {/* Показания (мок — нет эндпоинта) */}
+        {/* Показания счётчиков — показываем ДАТУ последней передачи */}
         <Stat.Root bg="white" p={4} rounded="lg" shadow="sm">
           <Stat.Label>Последние показания</Stat.Label>
           <Stat.ValueText color="gray.700">
-            Не переданы
+            {dashboardData.lastMeterReadingDate 
+              ? formatDate(dashboardData.lastMeterReadingDate)
+              : 'Не переданы'}
           </Stat.ValueText>
-          <Stat.HelpText>срочно передайте показания</Stat.HelpText>
-          <Buttons.DangerButton 
-            as={RouterLink} 
-            to="/meters" 
-            size="sm" 
-            color="white"
-            colorPalette="red" 
-            mt={2}
-          >
-            Передать показания
-          </Buttons.DangerButton>
+          <Stat.HelpText>
+            {dashboardData.lastMeterReadingDate 
+              ? 'дата последней передачи' 
+              : 'срочно передайте показания'}
+          </Stat.HelpText>
+          {hasRecentReading ? (
+            <Buttons.OutlineButton 
+              as={RouterLink} 
+              to="/meters" 
+              size="sm" 
+              mt={2}
+            >
+              Передать снова
+            </Buttons.OutlineButton>
+          ) : (
+            <Buttons.DangerButton 
+              as={RouterLink} 
+              to="/meters" 
+              size="sm" 
+              color="white"
+              colorPalette="red" 
+              mt={2}
+            >
+              Передать показания
+            </Buttons.DangerButton>
+          )}
         </Stat.Root>
         
-        {/* Открытые заявки — реальные данные */}
+        {/* Открытые заявки */}
         <Stat.Root bg="white" p={4} rounded="lg" shadow="sm">
           <Stat.Label>Открытые заявки</Stat.Label>
           <Stat.ValueText color="gray.700">{dashboardData.openRequests}</Stat.ValueText>

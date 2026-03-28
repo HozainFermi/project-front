@@ -5,19 +5,22 @@ import api from '../api/instance';
 
 // Вспомогательная функция для проверки авторизации
 async function requireAuth() {
-  // Если роль уже есть в сторе, используем её
-  if (authStore.role) {
-    return true;
-  }
+  // Временно всегда возвращаем true
+  return true;
   
-  // Иначе пробуем проверить на сервере
-  try {
-    const response = await api.get('/auth/me');
-    authStore.setAuth(response.data);
-    return true;
-  } catch (error) {
-    return false;
-  }
+  // // Если роль уже есть в сторе, используем её
+  // if (authStore.role) {
+  //   return true;
+  // }
+  
+  // // Иначе пробуем проверить на сервере
+  // try {
+  //   const response = await api.get('/auth/me');
+  //   authStore.setAuth(response.data);
+  //   return true;
+  // } catch (error) {
+  //   return false;
+  // }
 }
 
 // Загрузчик для авторизованных пользователей (USER)
@@ -25,11 +28,9 @@ export async function userLoader() {
   const isAuth = await requireAuth();
   
   if (!isAuth) {
-    //!!!return redirect('/auth/login');
+    return redirect('/auth/login');
   }
   
-  // Проверяем, что роль - user (или хотя бы не админ/воркер)
-  // Можно пускать всех авторизованных, но показывать только свой функционал
   return null;
 }
 
@@ -38,12 +39,12 @@ export async function workerLoader() {
   const isAuth = await requireAuth();
   
   if (!isAuth) {
-    //!!!return redirect('/auth/login');
+    return redirect('/auth/login');
   }
   
-  if (!authStore.hasRole(['worker', 'admin'])) {
-    //!!!return redirect('/unauthorized');
-  }
+  // if (!authStore.hasRole(['worker', 'admin'])) {
+  //   return redirect('/unauthorized');
+  // }
   
   return null;
 }
@@ -53,12 +54,12 @@ export async function adminLoader() {
   const isAuth = await requireAuth();
   
   if (!isAuth) {
-    //!!!return redirect('/auth/login');
+    return redirect('/auth/login');
   }
   
-  if (!authStore.hasRole('admin')) {
-    //!!!return redirect('/unauthorized');
-  }
+  // if (!authStore.hasRole('admin')) {
+  //   return redirect('/unauthorized');
+  // }
   
   return null;
 }
