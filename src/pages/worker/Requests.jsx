@@ -45,6 +45,7 @@ export default function WorkerRequests() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
+      // ✅ GET /api/service/requests — получает заявки в зависимости от роли
       const response = await api.get('/api/service/requests');
       setRequests(response.data);
     } catch (error) {
@@ -98,50 +99,39 @@ export default function WorkerRequests() {
     setNewStatus('');
   };
 
-  const handleStatusChange = async () => {
-    if (!selectedRequest || newStatus === selectedRequest.status) return;
+const handleStatusChange = async () => {
+  if (!selectedRequest || newStatus === selectedRequest.status) return;
+  
+  setIsUpdatingStatus(true);
+  try {
+    await api.put(`/api/service/requests/${selectedRequest.id}/status`, newStatus, {
+      headers: { 'Content-Type': 'text/plain' }
+    });
     
-    setIsUpdatingStatus(true);
-    try {
-      console.log('📤 Отправка:', {
-        url: `/api/service/requests/${selectedRequest.id}`,
-        data: { status: newStatus }
-      });
-      
-      // ✅ отправляем только status
-      const response = await api.patch(`/api/service/requests/${selectedRequest.id}`, {
-        status: newStatus
-      });
-      
-      console.log('✅ Ответ:', response.data);
-      
-      // Обновляем локальный список
-      const updatedRequest = { ...selectedRequest, status: newStatus };
-      setRequests(prev => 
-        prev.map(req => req.id === updatedRequest.id ? updatedRequest : req)
-      );
-      setSelectedRequest(updatedRequest);
-      
-      toaster.create({
-        title: 'Успешно',
-        description: `Статус изменён на "${getStatusText(newStatus)}"`,
-        type: 'success',
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error('❌ Ошибка обновления статуса:', error);
-      console.error('📡 Статус:', error.response?.status);
-      console.error('📄 Ответ сервера:', error.response?.data);
-      toaster.create({
-        title: 'Ошибка',
-        description: error.response?.data?.message || 'Не удалось изменить статус',
-        type: 'error',
-        duration: 3000,
-      });
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
+    const updatedRequest = { ...selectedRequest, status: newStatus };
+    setRequests(prev => 
+      prev.map(req => req.id === updatedRequest.id ? updatedRequest : req)
+    );
+    setSelectedRequest(updatedRequest);
+    
+    toaster.create({
+      title: 'Успешно',
+      description: `Статус изменён на "${getStatusText(newStatus)}"`,
+      type: 'success',
+      duration: 3000,
+    });
+  } catch (error) {
+    console.error('Ошибка обновления статуса:', error);
+    toaster.create({
+      title: 'Ошибка',
+      description: error.response?.data?.message || 'Не удалось изменить статус',
+      type: 'error',
+      duration: 3000,
+    });
+  } finally {
+    setIsUpdatingStatus(false);
+  }
+};
 
   if (loading) {
     return (
@@ -154,14 +144,14 @@ export default function WorkerRequests() {
   return (
     <Box>
       <HStack justify="space-between" mb={4}>
-        <Heading size="lg">Заявки жильцов</Heading>
+        <Heading size="lg">Заявки</Heading>
       </HStack>
       
       <Table.Root bg="white" rounded="lg" shadow="sm" overflowX="auto">
         <Table.Header>
           <Table.Row>
             <Table.ColumnHeader>№</Table.ColumnHeader>
-            <Table.ColumnHeader>Жилец</Table.ColumnHeader>
+            <Table.ColumnHeader>Заявитель</Table.ColumnHeader>
             <Table.ColumnHeader>Тема</Table.ColumnHeader>
             <Table.ColumnHeader>Описание</Table.ColumnHeader>
             <Table.ColumnHeader>Статус</Table.ColumnHeader>
@@ -181,7 +171,7 @@ export default function WorkerRequests() {
             requests.map((request) => (
               <Table.Row key={request.id}>
                 <Table.Cell>{request.id}</Table.Cell>
-                <Table.Cell>{request.creatorName || request.resident}</Table.Cell>
+                <Table.Cell>{request.creator}</Table.Cell>
                 <Table.Cell>{request.title}</Table.Cell>
                 <Table.Cell>
                   <Text noOfLines={1} maxW="250px">
@@ -225,8 +215,12 @@ export default function WorkerRequests() {
               <Dialog.Body>
                 <VStack align="stretch" gap={4}>
                   <Box>
-                    <Text fontWeight="bold" fontSize="sm" color="gray.500">Жилец</Text>
-                    <Text>{selectedRequest?.creatorName || selectedRequest?.resident}</Text>
+                    <Text fontWeight="bold" fontSize="sm" color="gray.500">Заявитель</Text>
+                    <Text>{selectedRequest?.creator}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontWeight="bold" fontSize="sm" color="gray.500">Исполнитель</Text>
+                    <Text>{selectedRequest?.assigner || 'Не назначен'}</Text>
                   </Box>
                   <Box>
                     <Text fontWeight="bold" fontSize="sm" color="gray.500">Тема</Text>
@@ -264,10 +258,10 @@ export default function WorkerRequests() {
                     <Text fontWeight="bold" fontSize="sm" color="gray.500">Дата создания</Text>
                     <Text>{formatDate(selectedRequest?.createdAt)}</Text>
                   </Box>
-                  {selectedRequest?.assigneeName && (
+                  {selectedRequest?.resolutionComment && (
                     <Box>
-                      <Text fontWeight="bold" fontSize="sm" color="gray.500">Исполнитель</Text>
-                      <Text>{selectedRequest.assigneeName}</Text>
+                      <Text fontWeight="bold" fontSize="sm" color="gray.500">Комментарий</Text>
+                      <Text>{selectedRequest.resolutionComment}</Text>
                     </Box>
                   )}
                 </VStack>

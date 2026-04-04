@@ -23,35 +23,30 @@ export default function WorkerDashboard() {
     try {
       setLoading(true);
       
-      // Получаем профиль пользователя (оттуда возьмём companyId)
       let companyId = 1;
       try {
-        const userRes = await api.get('/users/profile');
+        const userRes = await api.get('/api/users/profile');
         companyId = userRes.data.companyId || 1;
       } catch (error) {
         console.error('Ошибка загрузки профиля:', error);
       }
       
-      // Получаем информацию о компании
       try {
-        const companyResponse = await api.get(`/service/company_profile/${companyId}`);
+        const companyResponse = await api.get(`/api/service/company_profile/${companyId}`);
         setCompanyName(companyResponse.data.companyName);
       } catch (error) {
         console.error('Ошибка загрузки компании:', error);
       }
       
-      // Получаем все заявки компании
-      const requestsResponse = await api.get('/service/requests');
+      const requestsResponse = await api.get('/api/service/requests');
       const allRequests = requestsResponse.data || [];
       
-      // Считаем статистику
       const total = allRequests.length;
       const open = allRequests.filter(r => r.status === 'Created' || r.status === 'Accepted').length;
       const inProgress = allRequests.filter(r => r.status === 'InProgress').length;
       const completed = allRequests.filter(r => r.status === 'Completed').length;
       const rejected = allRequests.filter(r => r.status === 'Rejected').length;
       
-      // Последние 5 заявок
       const recent = [...allRequests]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 5);
@@ -118,7 +113,6 @@ export default function WorkerDashboard() {
       )}
       
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={6} mb={8}>
-        {/* Всего заявок */}
         <Stat.Root bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
           <Stat.Label fontSize="sm" color="gray.600">Всего заявок</Stat.Label>
           <Stat.ValueText fontSize="3xl" fontWeight="bold">
@@ -127,7 +121,6 @@ export default function WorkerDashboard() {
           <Stat.HelpText fontSize="sm">за всё время</Stat.HelpText>
         </Stat.Root>
         
-        {/* Открытые заявки */}
         <Stat.Root bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
           <Stat.Label fontSize="sm" color="gray.600">Открытые заявки</Stat.Label>
           <Stat.ValueText fontSize="3xl" fontWeight="bold">
@@ -136,7 +129,6 @@ export default function WorkerDashboard() {
           <Stat.HelpText fontSize="sm">требуют внимания</Stat.HelpText>
         </Stat.Root>
         
-        {/* В работе */}
         <Stat.Root bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
           <Stat.Label fontSize="sm" color="gray.600">В работе</Stat.Label>
           <Stat.ValueText fontSize="3xl" fontWeight="bold">
@@ -145,7 +137,6 @@ export default function WorkerDashboard() {
           <Stat.HelpText fontSize="sm">активные заявки</Stat.HelpText>
         </Stat.Root>
         
-        {/* Выполнено */}
         <Stat.Root bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
           <Stat.Label fontSize="sm" color="gray.600">Выполнено</Stat.Label>
           <Stat.ValueText fontSize="3xl" fontWeight="bold">
@@ -155,7 +146,6 @@ export default function WorkerDashboard() {
         </Stat.Root>
       </SimpleGrid>
 
-      {/* Прогресс выполнения */}
       <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6}>
         <Box bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
           <Heading size="md" mb={4}>Статусы заявок</Heading>
@@ -207,7 +197,6 @@ export default function WorkerDashboard() {
           </VStack>
         </Box>
 
-        {/* Последние заявки */}
         <Box bg="white" p={6} rounded="lg" shadow="sm" borderWidth="1px">
           <HStack justify="space-between" mb={4}>
             <Heading size="md">Последние заявки</Heading>
@@ -227,7 +216,7 @@ export default function WorkerDashboard() {
                     </Badge>
                   </HStack>
                   <Text fontSize="sm" color="gray.600">
-                    {request.creatorName} • {formatDate(request.createdAt)}
+                    {request.creator} • {formatDate(request.createdAt)}
                   </Text>
                 </Box>
               ))}

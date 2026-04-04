@@ -213,7 +213,7 @@ export default function UserProfile() {
         }
       };
 
-      console.log('📤 Отправляем:', payload);
+      console.log('Отправляем:', payload);
 
       await api.put('/api/users/profile', payload);
       

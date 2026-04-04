@@ -18,20 +18,17 @@ export default function CompanyUsers() {
     try {
       setLoading(true);
       
-      // Получаем профиль пользователя, чтобы узнать companyId
       let companyId = 1;
       try {
-        const userRes = await api.get('/users/profile');
+        const userRes = await api.get('/api/users/profile');
         companyId = userRes.data.companyId || 1;
       } catch (error) {
         console.error('Ошибка загрузки профиля:', error);
       }
       
-      // Получаем информацию о компании
-      const companyRes = await api.get(`/service/company_profile/${companyId}`);
+      const companyRes = await api.get(`/api/service/company_profile/${companyId}`);
       setCompanyName(companyRes.data.companyName);
       
-      // Фильтруем жильцов (role === 'User')
       const allMembers = companyRes.data.members || [];
       const residents = allMembers.filter(member => member.role === 'User');
       setUsers(residents);
