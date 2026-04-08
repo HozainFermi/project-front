@@ -5,7 +5,7 @@ import {
   redirect,
 } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { checkAuth } from './utils/auth';
+//import { checkAuth } from './utils/auth';
 import { authStore } from './api/authStore';
 
 // Лейауты
@@ -28,6 +28,7 @@ import UserMeters from './pages/user/Meters';
 import UserRequests from './pages/user/Requests';
 import UserNews from './pages/user/News';
 import UserPayments from './pages/user/Payments';
+import UserSettings from './pages/user/Settings';
 
 // Страницы работников/админов
 import WorkerDashboard from './pages/worker/Dashboard';
@@ -37,6 +38,7 @@ import WorkerMeterReadings from './pages/worker/MeterReadings';
 import CompanyUsers from './pages/worker/Users';
 import UserDetails from './pages/worker/UserDetails';
 import WorkerMessages from './pages/worker/Messages';
+import WorkerSettings from './pages/worker/Settings';
 
 // Страницы только для админов
 import AdminDashboard from './pages/admin/Dashboard';
@@ -55,7 +57,8 @@ function AppInitializer({ children }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth().finally(() => setIsLoading(false));
+    // Просто убираем загрузку
+    setIsLoading(false);
   }, []);
 
   if (isLoading) {
@@ -108,6 +111,7 @@ const router = createBrowserRouter([
       { path: "requests", element: <UserRequests /> },
       { path: "news", element: <UserNews /> },
       {path: "payments",element: <UserPayments/>} ,
+      {path: "settings", element:<UserSettings/>},
     ]
   },
 
@@ -124,7 +128,8 @@ const router = createBrowserRouter([
       { path: "meter-readings", element: <WorkerMeterReadings /> },
       { path: "users", element: <CompanyUsers /> },
       { path: "users/:id", element: <UserDetails /> },
-      { path: "messages", element:<WorkerMessages/>}
+      { path: "messages", element:<WorkerMessages/>},
+      { path: "settings", element:<WorkerSettings/>},
     ]
   },
 

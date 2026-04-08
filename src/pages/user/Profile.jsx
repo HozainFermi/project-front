@@ -1,5 +1,4 @@
-// pages/UserProfile.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Heading, 
@@ -19,38 +18,88 @@ import {
   FaUser,
   FaPhone,
   FaEnvelope,
-  FaPencilAlt,
   FaCheck,
   FaTimes,
   FaMapMarkerAlt,
   FaHome,
-  FaBuilding
+  FaBuilding,
+  FaCity,
+  FaMap
 } from 'react-icons/fa';
-
-// Импортируем вынесенный компонент
-import YandexMap from '../../components/ui/YandexMap'; // Путь может отличаться в зависимости от вашей структуры
+import YandexMap from '../../components/ui/YandexMap';
+import api from '../../api/instance';
 
 export default function UserProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: 'Иван',
-    lastName: 'Иванов',
-    patronymic: 'Иванович',
-    phone: '+7 (999) 000-00-00',
-    email: 'ivanov@example.com',
-    accountNumber:'1234567890',
-    address: 'г. Город, ул. Примерная, д. 1, кв. 1',
-    flatNumber: '1',
-    buildingNumber: '1',
-    street: 'ул. Примерная',
-    city: 'Город'
+    firstName: '',
+    lastName: '',
+    patronymic: '',
+    phone: '',
+    email: '',
+    region: '',
+    city: '',
+    street: '',
+    buildingNumber: '',
+    flatNumber: '',
+    totalArea: '',
+    role: ''
   });
   
   const [originalData, setOriginalData] = useState({ ...formData });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // ... остальной код без изменений
+  // Загрузка данных профиля
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/api/users/profile');
+      const user = response.data;
+      
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        patronymic: user.middleName || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        region: user.address?.region || '',
+        city: user.address?.city || '',
+        street: user.address?.street || '',
+        buildingNumber: user.address?.house || '',
+        flatNumber: user.address?.flat || '',
+        totalArea: user.address?.totalArea || '',
+        role: user.role || 'User'
+      });
+      
+      setOriginalData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        patronymic: user.middleName || '',
+        phone: user.phone || '',
+        email: user.email || '',
+        region: user.address?.region || '',
+        city: user.address?.city || '',
+        street: user.address?.street || '',
+        buildingNumber: user.address?.house || '',
+        flatNumber: user.address?.flat || '',
+        totalArea: user.address?.totalArea || '',
+        role: user.role || 'User'
+      });
+      
+    } catch (error) {
+      console.error('Ошибка загрузки профиля:', error);
+      showToast('Ошибка', 'Не удалось загрузить данные профиля', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const showToast = (title, description, type = 'info') => {
     toaster.create({
       title,
@@ -72,69 +121,73 @@ export default function UserProfile() {
   const handleAddressSelect = (addressData) => {
     setFormData(prev => ({ 
       ...prev, 
-      address: addressData.address,
+      city: addressData.city || prev.city,
+      street: addressData.street || prev.street,
+      buildingNumber: addressData.house || prev.buildingNumber,
+      flatNumber: addressData.flat || prev.flatNumber
     }));
   };
 
   const validateForm = () => {
-  const newErrors = {};
-  
+    const newErrors = {};
+    
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Фамилия обязательна';
+    } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.lastName)) {
+      newErrors.lastName = 'Только буквы и дефис';
+    } else if (formData.lastName.length > 64) {
+      newErrors.lastName = 'Не более 64 символов';
+    }
+    
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'Имя обязательно';
+    } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.firstName)) {
+      newErrors.firstName = 'Только буквы и дефис';
+    } else if (formData.firstName.length > 64) {
+      newErrors.firstName = 'Не более 64 символов';
+    }
+    
+    if (formData.patronymic.trim() && !/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.patronymic)) {
+      newErrors.patronymic = 'Только буквы и дефис';
+    } else if (formData.patronymic.length > 64) {
+      newErrors.patronymic = 'Не более 64 символов';
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Телефон обязателен';
+    } else if (!/^[\d\s\+\-\(\)]+$/.test(formData.phone)) {
+      newErrors.phone = 'Неверный формат телефона';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email обязателен';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Неверный формат email';
+    }
+    
+    if (!formData.city.trim()) {
+      newErrors.city = 'Город обязателен';
+    }
+    
+    if (!formData.street.trim()) {
+      newErrors.street = 'Улица обязательна';
+    }
+    
+    if (!formData.buildingNumber.trim()) {
+      newErrors.buildingNumber = 'Номер дома обязателен';
+    } else if (!/^\d+[а-яА-Я]?$/.test(formData.buildingNumber)) {
+      newErrors.buildingNumber = 'Только цифры и буква (например: 15 или 15А)';
+    }
+    
+    if (!formData.flatNumber.trim()) {
+      newErrors.flatNumber = 'Номер квартиры обязателен';
+    } else if (!/^\d+$/.test(formData.flatNumber)) {
+      newErrors.flatNumber = 'Только цифры';
+    }
 
-  if (!formData.lastName.trim()) {
-    newErrors.lastName = 'Фамилия обязательна';
-  } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.lastName)) {
-    newErrors.lastName = 'Только буквы и дефис';
-  } else if (formData.lastName.length > 64) {
-    newErrors.lastName = 'Не более 64 символов';
-  }
-  
-
-  if (!formData.firstName.trim()) {
-    newErrors.firstName = 'Имя обязательно';
-  } else if (!/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.firstName)) {
-    newErrors.firstName = 'Только буквы и дефис';
-  } else if (formData.firstName.length > 64) {
-    newErrors.firstName = 'Не более 64 символов';
-  }
-  
- 
-  if (formData.patronymic.trim() && !/^[A-Za-zА-Яа-яЁё\-]+$/.test(formData.patronymic)) {
-    newErrors.patronymic = 'Только буквы и дефис';
-  } else if (formData.patronymic.length > 64) {
-    newErrors.patronymic = 'Не более 64 символов';
-  }
-  
-
-  if (!formData.phone.trim()) {
-    newErrors.phone = 'Телефон обязателен';
-  } else if (!/^[\d\s\+\-\(\)]+$/.test(formData.phone)) {
-    newErrors.phone = 'Неверный формат телефона';
-  }
-  
-
-  if (!formData.email.trim()) {
-    newErrors.email = 'Email обязателен';
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-    newErrors.email = 'Неверный формат email';
-  }
-  
-
-  if (!formData.accountNumber.trim()) {
-    newErrors.accountNumber = 'Номер лицевого счёта обязателен';
-  } else if (!/^\d+$/.test(formData.accountNumber)) {
-    newErrors.accountNumber = 'Только цифры';
-  } else if (!/^\d{10,12}$/.test(formData.accountNumber)) {
-    newErrors.accountNumber = 'Номер должен содержать 10-12 цифр';
-  }
-  
-
-  if (!formData.address.trim()) {
-    newErrors.address = 'Адрес обязателен';
-  }
-
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -144,14 +197,35 @@ export default function UserProfile() {
 
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        middleName: formData.patronymic || null,
+        phone: formData.phone,
+        email: formData.email,
+        address: {
+          region: formData.region || null,
+          city: formData.city,
+          street: formData.street,
+          house: formData.buildingNumber,
+          flat: formData.flatNumber,
+          totalArea: formData.totalArea || null
+        }
+      };
+
+      console.log('Отправляем:', payload);
+
+      await api.put('/api/users/profile', payload);
       
-      setOriginalData({ ...formData });
+      await fetchProfile();
       setIsEditing(false);
       
       showToast('Успешно', 'Данные профиля обновлены', 'success');
     } catch (error) {
-      showToast('Ошибка', 'Не удалось сохранить изменения', 'error');
+      console.error('Ошибка сохранения:', error);
+      console.error('Статус:', error.response?.status);
+      console.error('Ответ сервера:', error.response?.data);
+      showToast('Ошибка', error.response?.data?.message || 'Не удалось сохранить изменения', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -167,10 +241,28 @@ export default function UserProfile() {
     setIsEditing(true);
   };
 
+  const getRoleText = (role) => {
+    switch(role) {
+      case 'User': return 'Жилец';
+      case 'Worker': return 'Сотрудник';
+      case 'Admin': return 'Администратор';
+      case 'CompanyOwner': return 'Владелец компании';
+      default: return 'Жилец';
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box p={8} textAlign="center">
+        <Text>Загрузка профиля...</Text>
+      </Box>
+    );
+  }
+
   return (
     <Box>
       <HStack justify="space-between" mb={4}>
-        <Heading size="lg"color="black">Профиль жильца</Heading>
+        <Heading size="lg" color="black">Профиль жильца</Heading>
         {!isEditing ? (
           <Button 
             colorPalette="teal"
@@ -313,32 +405,6 @@ export default function UserProfile() {
                   )}
                   <Field.ErrorText>{errors.email}</Field.ErrorText>
                 </Field.Root>
-                
-  {/* После email или перед адресом */}
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                <Field.Root invalid={errors.accountNumber}>
-                  <Field.Label>
-                    <HStack spacing={1}>
-                    <Text>№ лицевого счёта</Text>
-                  </HStack>
-               </Field.Label>
-    {isEditing ? (
-      <Input
-        name="accountNumber"
-        value={formData.accountNumber}
-        onChange={handleInputChange}
-        placeholder="10-12 цифр"
-        maxLength={12}
-      />
-    ) : (
-      <Text p={2} bg="gray.50" borderRadius="md">
-        {formData.accountNumber || '—'}
-      </Text>
-    )}
-    <Field.ErrorText>{errors.accountNumber}</Field.ErrorText>
-  </Field.Root>
-</SimpleGrid>
-                
               </SimpleGrid>
 
               <Box borderBottom="1px solid" borderColor="gray.200" my={2} />
@@ -346,7 +412,7 @@ export default function UserProfile() {
               <Field.Root>
                 <Field.Label>Роль</Field.Label>
                 <Text p={2} bg="gray.50" borderRadius="md" fontWeight="bold">
-                  Жилец
+                  {getRoleText(formData.role)}
                 </Text>
               </Field.Root>
             </VStack>
@@ -356,8 +422,8 @@ export default function UserProfile() {
             <Card.Footer>
               <HStack spacing={3} justify="flex-end" width="full">
                 <Button
-                colorPalette="teal"
-                 color="#646cff"
+                  colorPalette="teal"
+                  color="#646cff"
                   variant="outline"
                   isLoading={isLoading}
                   loadingText="Сохранение"
@@ -369,13 +435,12 @@ export default function UserProfile() {
                 </Button>
                 <Button
                   leftIcon={<FaCheck />}
-
-            colorPalette="teal"
-            color="#646cff"
-            variant="outline"
-            onClick={handleSave}
-            isLoading={isLoading}
-            loadingText="Сохранение"
+                  colorPalette="teal"
+                  color="#646cff"
+                  variant="outline"
+                  onClick={handleSave}
+                  isLoading={isLoading}
+                  loadingText="Сохранение"
                 >
                   Сохранить изменения
                 </Button>
@@ -384,7 +449,7 @@ export default function UserProfile() {
           )}
         </Card.Root>
 
-        {/* Правая колонка - адрес и карты */}
+        {/* Правая колонка - адрес */}
         <Card.Root>
           <Card.Header>
             <Text fontWeight="bold" fontSize="lg">
@@ -394,55 +459,148 @@ export default function UserProfile() {
           
           <Card.Body>
             <VStack spacing={4} align="stretch">
-              <Field.Root invalid={errors.address}>
+              {/* Регион */}
+              <Field.Root>
                 <Field.Label>
                   <HStack spacing={1}>
-                    <FaMapMarkerAlt />
-                    <Text>Адрес</Text>
+                    <FaMap />
+                    <Text>Регион</Text>
                   </HStack>
                 </Field.Label>
                 {isEditing ? (
                   <Input
-                    name="address"
-                    value={formData.address}
+                    name="region"
+                    value={formData.region}
                     onChange={handleInputChange}
-                    placeholder="Полный адрес"
+                    placeholder="Московская область"
                   />
                 ) : (
                   <Text p={2} bg="gray.50" borderRadius="md">
-                    {formData.address}
+                    {formData.region || '—'}
                   </Text>
                 )}
-                <Field.ErrorText>{errors.address}</Field.ErrorText>
+              </Field.Root>
+
+              {/* Город */}
+              <Field.Root invalid={errors.city}>
+                <Field.Label>
+                  <HStack spacing={1}>
+                    <FaCity />
+                    <Text>Город</Text>
+                  </HStack>
+                </Field.Label>
+                {isEditing ? (
+                  <Input
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    placeholder="Москва"
+                  />
+                ) : (
+                  <Text p={2} bg="gray.50" borderRadius="md">
+                    {formData.city || '—'}
+                  </Text>
+                )}
+                <Field.ErrorText>{errors.city}</Field.ErrorText>
+              </Field.Root>
+
+              {/* Улица */}
+              <Field.Root invalid={errors.street}>
+                <Field.Label>
+                  <HStack spacing={1}>
+                    <FaMapMarkerAlt />
+                    <Text>Улица</Text>
+                  </HStack>
+                </Field.Label>
+                {isEditing ? (
+                  <Input
+                    name="street"
+                    value={formData.street}
+                    onChange={handleInputChange}
+                    placeholder="Тверская"
+                  />
+                ) : (
+                  <Text p={2} bg="gray.50" borderRadius="md">
+                    {formData.street || '—'}
+                  </Text>
+                )}
+                <Field.ErrorText>{errors.street}</Field.ErrorText>
+              </Field.Root>
+
+              {/* Дом и Квартира */}
+              <SimpleGrid columns={2} spacing={4}>
+                <Field.Root invalid={errors.buildingNumber}>
+                  <Field.Label>
+                    <HStack spacing={1}>
+                      <FaHome />
+                      <Text>Дом</Text>
+                    </HStack>
+                  </Field.Label>
+                  {isEditing ? (
+                    <Input
+                      name="buildingNumber"
+                      value={formData.buildingNumber}
+                      onChange={handleInputChange}
+                      placeholder="10"
+                    />
+                  ) : (
+                    <Text p={2} bg="gray.50" borderRadius="md">
+                      {formData.buildingNumber || '—'}
+                    </Text>
+                  )}
+                  <Field.ErrorText>{errors.buildingNumber}</Field.ErrorText>
+                </Field.Root>
+
+                <Field.Root invalid={errors.flatNumber}>
+                  <Field.Label>
+                    <HStack spacing={1}>
+                      <FaBuilding />
+                      <Text>Квартира</Text>
+                    </HStack>
+                  </Field.Label>
+                  {isEditing ? (
+                    <Input
+                      name="flatNumber"
+                      value={formData.flatNumber}
+                      onChange={handleInputChange}
+                      placeholder="5"
+                    />
+                  ) : (
+                    <Text p={2} bg="gray.50" borderRadius="md">
+                      {formData.flatNumber || '—'}
+                    </Text>
+                  )}
+                  <Field.ErrorText>{errors.flatNumber}</Field.ErrorText>
+                </Field.Root>
+              </SimpleGrid>
+
+              {/* Площадь */}
+              <Field.Root>
+                <Field.Label>Площадь (м²)</Field.Label>
+                {isEditing ? (
+                  <Input
+                    name="totalArea"
+                    value={formData.totalArea}
+                    onChange={handleInputChange}
+                    placeholder="65.5"
+                  />
+                ) : (
+                  <Text p={2} bg="gray.50" borderRadius="md">
+                    {formData.totalArea || '—'}
+                  </Text>
+                )}
               </Field.Root>
 
               <Box>
                 <Text fontWeight="medium" mb={2}>Выберите адрес на карте</Text>
                 <YandexMap 
-                  address={formData.address} 
+                  address={`${formData.city}, ${formData.street}, ${formData.buildingNumber}, ${formData.flatNumber}`}
                   onAddressSelect={handleAddressSelect}
                 />
                 <Text fontSize="xs" color="gray.500" mt={1}>
                   Нажмите на карте или найдите адрес через поиск
                 </Text>
               </Box>
-
-              <SimpleGrid columns={2} spacing={4} mt={2}>
-                <Box>
-                  <HStack spacing={1} color="gray.600" mb={1}>
-                    <FaBuilding />
-                    <Text fontSize="sm">Квартира</Text>
-                  </HStack>
-                  <Text fontWeight="medium">{formData.flatNumber}</Text>
-                </Box>
-                <Box>
-                  <HStack spacing={1} color="gray.600" mb={1}>
-                    <FaHome />
-                    <Text fontSize="sm">Дом</Text>
-                  </HStack>
-                  <Text fontWeight="medium">{formData.buildingNumber}</Text>
-                </Box>
-              </SimpleGrid>
             </VStack>
           </Card.Body>
         </Card.Root>

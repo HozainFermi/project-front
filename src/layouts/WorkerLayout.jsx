@@ -1,5 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { Box, Flex, Heading, HStack, IconButton, VStack, Text, Avatar, Badge } from '@chakra-ui/react';
+import { useState, useEffect } from 'react';
 import { 
   LuLayoutDashboard, 
   LuClipboardList, 
@@ -13,27 +14,77 @@ import {
 import { 
   FaHome
 } from 'react-icons/fa';
+import api from '../api/instance';
 
 export default function WorkerLayout() {
-  // Временная заглушка для непрочитанных
-  const unreadCount = 3;
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const unreadCount = 3; // TODO: заменить на реальное количество
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.get('/users/profile');
+      setUser(response.data);
+    } catch (error) {
+      console.error('Ошибка загрузки профиля:', error);
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        setUser(JSON.parse(userStr));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const menuItems = [
     { path: '/worker/dashboard', label: 'Дашборд', icon: LuLayoutDashboard },
     { path: '/worker/requests', label: 'Заявки', icon: LuClipboardList },
     { path: '/worker/meter-readings', label: 'Показания счётчиков', icon: LuGauge },
     { path: '/worker/users', label: 'Жильцы', icon: LuUsers },
-    { 
-      path: '/worker/messages', 
-      label: 'Сообщения', 
-      icon: LuMessageSquare, 
-      badge: unreadCount  // ← добавляем бейдж с количеством
-    },
+    { path: '/worker/messages', label: 'Сообщения', icon: LuMessageSquare, badge: unreadCount },
   ];
+
+  const getFullName = () => {
+    if (!user) return 'Сотрудник';
+    const lastName = user.lastName || '';
+    const firstName = user.firstName || '';
+    const fullName = `${lastName} ${firstName}`.trim();
+    return fullName || 'Сотрудник';
+  };
+
+  const getInitials = () => {
+    if (!user) return 'С';
+    const lastName = user.lastName || '';
+    const firstName = user.firstName || '';
+    const initials = `${lastName.charAt(0)}${firstName.charAt(0)}`.toUpperCase();
+    return initials || 'С';
+  };
+
+  const getRole = () => {
+    if (!user) return 'Сотрудник';
+    switch(user.role) {
+      case 'Worker': return 'Сотрудник';
+      case 'Admin': return 'Администратор';
+      case 'CompanyOwner': return 'Владелец компании';
+      default: return 'Сотрудник';
+    }
+  };
+
+  if (loading) {
+    return (
+      <Flex minH="100vh" bg="gray.50" align="center" justify="center">
+        <Text>Загрузка...</Text>
+      </Flex>
+    );
+  }
 
   return (
     <Flex minH="100vh" minW="100vw" bg="gray.50">
-      {/* Левая панель - улучшенная навигация */}
+      {/* Левая панель */}
       <Box
         w="260px"
         bg="white"
@@ -61,7 +112,7 @@ export default function WorkerLayout() {
             </Box>
             <VStack align="start" gap={0}>
               <Heading size="sm" color="teal.700">ЖКХ Портал</Heading>
-              <Text fontSize="xs" color="gray.500">Сотрудник</Text>
+              <Text fontSize="xs" color="gray.500">{getRole()}</Text>
             </VStack>
           </HStack>
         </Box>
@@ -70,12 +121,13 @@ export default function WorkerLayout() {
         <Box p={4} borderBottomWidth="1px" borderColor="gray.100">
           <HStack gap={3}>
             <Avatar.Root size="sm">
-              <Avatar.Fallback name="Кабан Кабаныч" />
-              <Avatar.Image src="https://bit.ly/dan-abramov" />
+              <Avatar.Fallback name={getFullName()}>
+                {getInitials()}
+              </Avatar.Fallback>
             </Avatar.Root>
             <VStack align="start" gap={0}>
-              <Text fontSize="sm" fontWeight="medium">Кабан Кабаныч</Text>
-              <Text fontSize="xs" color="gray.500">Мастер участка</Text>
+              <Text fontSize="sm" fontWeight="medium">{getFullName()}</Text>
+              <Text fontSize="xs" color="gray.500">{getRole()}</Text>
             </VStack>
           </HStack>
         </Box>
@@ -172,7 +224,7 @@ export default function WorkerLayout() {
         </Box>
       </Box>
 
-      {/* Основной контент - с отступом под левую панель */}
+      {/* Основной контент */}
       <Box
         flex="1"
         ml={{ base: 0, md: '260px' }}
@@ -198,35 +250,12 @@ export default function WorkerLayout() {
             </Heading>
             
             <HStack gap={3}>
-              <Box position="relative">
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  fontSize="18px"
-                  color="gray.600"
-                  _hover={{ bg: 'gray.100' }}
-                >
-                  <LuBellRing />
-                </IconButton>
-                <Badge
-                  position="absolute"
-                  top="-1"
-                  right="-1"
-                  bg="red.500"
-                  color="white"
-                  borderRadius="full"
-                  px={1}
-                  py={0.5}
-                  fontSize="2xs"
-                  transform="translate(25%, -25%)"
-                >
-                  3
-                </Badge>
-              </Box>
+              {/* Колокольчик удалён */}
 
               <Avatar.Root size="sm">
-                <Avatar.Fallback name="Иван Петров" />
-                <Avatar.Image src="https://bit.ly/dan-abramov" />
+                <Avatar.Fallback name={getFullName()}>
+                  {getInitials()}
+                </Avatar.Fallback>
               </Avatar.Root>
             </HStack>
           </Flex>
