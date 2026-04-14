@@ -1,0 +1,11 @@
+Model Information:
+* title:	Apartment house
+* source:	https://sketchfab.com/3d-models/apartment-house-40d54e3d8d0b4f189a30daf3524a0c5c
+* author:	paleev40 (https://sketchfab.com/paleev40)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Apartment house" (https://sketchfab.com/3d-models/apartment-house-40d54e3d8d0b4f189a30daf3524a0c5c) by paleev40 (https://sketchfab.com/paleev40) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
