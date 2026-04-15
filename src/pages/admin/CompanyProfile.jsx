@@ -16,7 +16,7 @@ export default function CompanyProfile() {
     inn: '',
     kpp: '',
     email: '',
-    descriprion: '',
+    description: '',
     address: {
       region: '',
       city: '',
@@ -36,35 +36,26 @@ export default function CompanyProfile() {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      // TODO: если есть эндпоинт для списка компаний, заменить
-      // const response = await api.get('/admin/companies');
-      // setCompanies(response.data);
-      
-      setCompanies([
-        {
-          id: 1,
-          companyName: 'ООО "УК Пример"',
-          inn: '1234567890',
-          kpp: '123456789',
-          email: 'info@example.com',
-          address: {
-            region: 'Московская область',
-            city: 'Москва',
-            street: 'ул. Ленина',
-            house: '15',
-            flat: '42',
-            totalArea: '65.5'
-          }
-        }
-      ]);
+      // ✅ НОВЫЙ ЭНДПОИНТ — получаем все компании
+      const response = await api.get('/api/service/company_profile');
+      setCompanies(response.data);
     } catch (error) {
       console.error('Ошибка загрузки компаний:', error);
-      toaster.create({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить список компаний',
-        type: 'error',
-        duration: 3000,
-      });
+      if (error.response?.status === 403) {
+        toaster.create({
+          title: 'Доступ запрещён',
+          description: 'Только администратор может просматривать список компаний',
+          type: 'error',
+          duration: 3000,
+        });
+      } else {
+        toaster.create({
+          title: 'Ошибка',
+          description: 'Не удалось загрузить список компаний',
+          type: 'error',
+          duration: 3000,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -78,7 +69,7 @@ export default function CompanyProfile() {
       inn: '',
       kpp: '',
       email: '',
-      descriprion: '',
+      description: '',
       address: {
         region: '',
         city: '',
@@ -100,7 +91,7 @@ export default function CompanyProfile() {
       inn: company.inn,
       kpp: company.kpp || '',
       email: company.email,
-      description: company.description || '',
+      description: company.descriprion || '',
       address: {
         region: company.address?.region || '',
         city: company.address?.city || '',
@@ -119,6 +110,7 @@ export default function CompanyProfile() {
     if (!confirmed) return;
     
     try {
+      // TODO: если есть эндпоинт для удаления, заменить
       setCompanies(prev => prev.filter(c => c.id !== id));
       toaster.create({
         title: 'Успешно',
@@ -155,7 +147,6 @@ export default function CompanyProfile() {
   const validateForm = () => {
     const newErrors = {};
     
-    // Название компании
     if (!formData.companyName.trim()) {
       newErrors.companyName = 'Название компании обязательно';
     } else if (formData.companyName.length < 3) {
@@ -164,26 +155,22 @@ export default function CompanyProfile() {
       newErrors.companyName = 'Название не должно превышать 100 символов';
     }
     
-    // ИНН
     if (!formData.inn.trim()) {
       newErrors.inn = 'ИНН обязателен';
     } else if (!/^\d{10,12}$/.test(formData.inn)) {
       newErrors.inn = 'ИНН должен содержать 10-12 цифр';
     }
     
-    // КПП
     if (formData.kpp && !/^\d{9}$/.test(formData.kpp)) {
       newErrors.kpp = 'КПП должен содержать 9 цифр';
     }
     
-    // Email
     if (!formData.email.trim()) {
       newErrors.email = 'Email обязателен';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Неверный формат email';
     }
     
-    // Адрес
     if (!formData.address.city.trim()) {
       newErrors['address.city'] = 'Город обязателен';
     }
@@ -194,7 +181,6 @@ export default function CompanyProfile() {
       newErrors['address.house'] = 'Номер дома обязателен';
     }
     
-    // Площадь
     if (formData.address.totalArea && (isNaN(formData.address.totalArea) || parseFloat(formData.address.totalArea) <= 0)) {
       newErrors['address.totalArea'] = 'Площадь должна быть положительным числом';
     }
@@ -221,21 +207,21 @@ export default function CompanyProfile() {
         inn: formData.inn,
         kpp: formData.kpp,
         email: formData.email,
-        description: formData.description,
+        descriprion: formData.description,
         address: {
           region: formData.address.region,
           city: formData.address.city,
           street: formData.address.street,
           house: formData.address.house,
           flat: formData.address.flat,
-          totalArea: formData.address.totalArea
+          totalArea: parseFloat(formData.address.totalArea) || 0
         }
       };
 
       if (isEditing) {
         // TODO: если есть эндпоинт для обновления, заменить
         setCompanies(prev => prev.map(c => 
-          c.id === selectedCompany.id ? { ...c, ...formData } : c
+          c.id === selectedCompany.id ? { ...c, ...payload } : c
         ));
         toaster.create({
           title: 'Успешно',
@@ -246,11 +232,8 @@ export default function CompanyProfile() {
       } else {
         const response = await api.post('/api/service/company_profile/register', payload);
         
-        const newCompany = { 
-          id: response.data.id || Date.now(), 
-          ...payload 
-        };
-        setCompanies(prev => [...prev, newCompany]);
+        // Обновляем список после создания
+        await fetchCompanies();
         
         toaster.create({
           title: 'Успешно',
@@ -473,7 +456,6 @@ export default function CompanyProfile() {
                           name="address.totalArea"
                           value={formData.address.totalArea}
                           onChange={handleChange}
-                          placeholder="Общая площадь"
                         />
                         <Field.ErrorText>{errors['address.totalArea']}</Field.ErrorText>
                       </Field.Root>
