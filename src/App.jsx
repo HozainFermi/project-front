@@ -100,15 +100,11 @@ const router = createBrowserRouter([
   
   // Страница "Нет доступа"
   {
-    path: "/unauthorized",
+    path: "/",
     element: <Unauthorized />
   },
 
-  // Корневой путь — редирект на /user
-  {
-    path: "/",
-    element: <Navigate to="/user" replace />
-  },
+  
 
   // Группа роутов для жильцов (USER)
   {
