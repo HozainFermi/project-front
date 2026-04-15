@@ -14,7 +14,7 @@ export default function WorkerMeterReadings() {
   const fetchReadings = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/users/counters');
+      const response = await api.get('/api/service/counters');
       setReadings(response.data);
     } catch (error) {
       console.error('Ошибка загрузки показаний:', error);

@@ -68,12 +68,11 @@ export default function Login() {
 
       // Редирект по роли
       switch (user.role) {
-        case 'User': navigate('/'); break;
-        case 'Worker': navigate('/worker/dashboard'); break;
-        case 'Admin': navigate('/admin/dashboard'); break;
-        default: navigate('/');
-      }
-
+  case 'User': navigate('/user'); break;  // ← здесь было '/', стало '/user'
+  case 'Worker': navigate('/worker/dashboard'); break;
+  case 'Admin': navigate('/admin/dashboard'); break;
+  default: navigate('/user');
+}
     } catch (error) {
       console.error('❌ Ошибка входа:', error);
       console.error('📡 Статус:', error.response?.status);

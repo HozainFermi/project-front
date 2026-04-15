@@ -13,6 +13,7 @@ import AuthLayout from './layouts/AuthLayout';
 import MainLayout from './layouts/MainLayout';
 import WorkerLayout from './layouts/WorkerLayout';
 import AdminLayout from './layouts/AdminLayout';
+import OwnerLayout from './layouts/OwnerLayout';
 
 // Страницы для всех
 import Unauthorized from './pages/Unauthorized';
@@ -29,6 +30,11 @@ import UserRequests from './pages/user/Requests';
 import UserNews from './pages/user/News';
 import UserPayments from './pages/user/Payments';
 import UserSettings from './pages/user/Settings';
+
+// Страницы для owner'ов
+import CreateWorker from './pages/owner/CreateWorker';
+import WorkersList from './pages/owner/WorkersList';
+import OwnerSettings from './pages/owner/Settings';
 
 // Страницы работников/админов
 import WorkerDashboard from './pages/worker/Dashboard';
@@ -58,7 +64,6 @@ function AppInitializer({ children }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Просто убираем загрузку
     setIsLoading(false);
   }, []);
 
@@ -82,7 +87,6 @@ const router = createBrowserRouter([
       { 
         path: "login", 
         element: <Login />,
-        // Если уже авторизован - редирект на главную по роли
         loader: async () => {
           if (authStore.role) {
             return redirect(authStore.role === 'user' ? '/' : '/worker/dashboard');
@@ -96,8 +100,14 @@ const router = createBrowserRouter([
   
   // Страница "Нет доступа"
   {
-    path: "/",
+    path: "/unauthorized",
     element: <Unauthorized />
+  },
+
+  // Корневой путь — редирект на /user
+  {
+    path: "/",
+    element: <Navigate to="/user" replace />
   },
 
   // Группа роутов для жильцов (USER)
@@ -111,12 +121,12 @@ const router = createBrowserRouter([
       { path: "meters", element: <UserMeters /> },
       { path: "requests", element: <UserRequests /> },
       { path: "news", element: <UserNews /> },
-      {path: "payments",element: <UserPayments/>} ,
-      {path: "settings", element:<UserSettings/>},
+      { path: "payments", element: <UserPayments /> },
+      { path: "settings", element: <UserSettings /> },
     ]
   },
 
-  // Группа роутов для работников (WORKER/ADMIN)
+  // Группа роутов для работников
   {
     path: "/worker",
     element: <WorkerLayout />,
@@ -129,12 +139,24 @@ const router = createBrowserRouter([
       { path: "meter-readings", element: <WorkerMeterReadings /> },
       { path: "users", element: <CompanyUsers /> },
       { path: "users/:id", element: <UserDetails /> },
-      { path: "messages", element:<WorkerMessages/>},
-      { path: "settings", element:<WorkerSettings/>},
+      { path: "messages", element: <WorkerMessages /> },
+      { path: "settings", element: <WorkerSettings /> },
     ]
   },
 
-  // Группа роутов для админа (ADMIN ONLY)
+  // Группа роутов для владельца (OWNER)
+  {
+    path: "/owner",
+    element: <OwnerLayout />,
+    children: [
+      { index: true, element: <Navigate to="/owner/workers" replace /> },
+      { path: "workers", element: <WorkersList /> },
+      { path: "create-worker", element: <CreateWorker /> },
+      { path: "settings", element: <OwnerSettings /> },
+    ]
+  },
+
+  // Группа роутов для админа
   {
     path: "/admin",
     element: <AdminLayout />,
@@ -145,7 +167,7 @@ const router = createBrowserRouter([
       { path: "company/profile", element: <CompanyProfile /> },
       { path: "workers", element: <AdminWorkers /> },
       { path: "create-owner", element: <CreateCompanyOwner /> },
-      {path: "settings", element:<AdminSettings/>}
+      { path: "settings", element: <AdminSettings /> },
     ]
   }
 ]);
